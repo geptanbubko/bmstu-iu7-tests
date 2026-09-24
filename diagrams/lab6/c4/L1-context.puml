@@ -1,0 +1,15 @@
+@startuml
+!include ../../../tools/C4-PlantUML/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+title Wildlife Monitoring DB — контекст (C4 L1, лаб. №6)
+
+Person(researcher, "Исследователь", "Фиксирует наблюдения и смотрит аналитику.")
+Person(admin, "Администратор", "Ведёт справочники видов и локаций.")
+
+System(wildlife, "Wildlife Monitoring DB", "Учёт наблюдений и динамики популяций. Сейчас — консольный технологический UI; позже — полноценный GUI.")
+
+Rel(researcher, wildlife, "Использует", "консоль / будущий HTTPS")
+Rel(admin, wildlife, "Администрирует", "консоль / будущий HTTPS")
+
+@enduml

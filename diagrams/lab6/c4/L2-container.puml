@@ -1,0 +1,30 @@
+@startuml
+!include ../../../tools/C4-PlantUML/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+title Wildlife Monitoring DB — контейнеры (C4 L2, лаб. №6)
+
+Person(researcher, "Исследователь")
+Person(admin, "Администратор")
+
+System_Boundary(sys, "Wildlife Monitoring DB") {
+    Container(console, "Технологический UI", "Python, консоль", "Системное тестирование сценариев. Сборка wildlife-ui.")
+    Container(web, "Web GUI (план)", "Flask, Jinja2", "Полноценный GUI: те же сервисы, что и консоль.")
+    Container(app, "Приложение", "Python", "Сборка wildlife-app: конфиг, логи, связь компонентов.")
+    ContainerDb(db, "База данных", "SQLite", "Персистентное хранение. Путь из config.ini.")
+}
+
+Rel(researcher, console, "Сейчас", "stdin/stdout")
+Rel(admin, console, "Сейчас", "stdin/stdout")
+Rel(researcher, web, "Позже", "HTTPS")
+Rel(admin, web, "Позже", "HTTPS")
+Rel(console, app, "Вызывает сервисы")
+Rel(web, app, "Вызовет те же сервисы")
+Rel(app, db, "SQL")
+
+note right of web
+  GUI ещё не реализован.
+  Контракт — те же сервисы бизнес-логики.
+end note
+
+@enduml

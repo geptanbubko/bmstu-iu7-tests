@@ -1,0 +1,77 @@
+@startuml
+title Компонент доступа к данным (C4 L4, лаб. №4)
+
+skinparam shadowing false
+skinParam linetype polyline
+skinparam nodesep 30
+skinparam ranksep 45
+hide empty members
+hide circle
+
+left to right direction
+
+package "Бизнес-логика (контракт)" {
+  interface IRepository {
+    +save_species(species): Species
+    +get_species(id): Species
+    +update_species(species): Species
+    +delete_species(id)
+    +species_exists(name): bool
+    +add_observation(observation): Observation
+    +find_population_records(...): list
+  }
+
+  package "Системные сущности" {
+    class Species <<domain>>
+    class Observation <<domain>>
+    class PopulationRecord <<domain>>
+    Species -[hidden]down- Observation
+    Observation -[hidden]down- PopulationRecord
+  }
+}
+
+package "Доступ к данным" {
+  class SqliteRepository {
+    -connection: Connection
+    +save_species(species): Species
+    +get_species(id): Species
+    +update_species(species): Species
+    +delete_species(id)
+    +species_exists(name): bool
+    +add_observation(observation): Observation
+    +find_population_records(...): list
+  }
+
+  package "Исключения хранилища" {
+    class DataAccessError <<exception>>
+    class DataValidationError <<exception>>
+    class EntityNotFoundError <<exception>>
+    class DuplicateEntityError <<exception>>
+    class IntegrityConstraintError <<exception>>
+    DataAccessError -[hidden]down- DataValidationError
+    DataValidationError -[hidden]down- EntityNotFoundError
+    EntityNotFoundError -[hidden]down- DuplicateEntityError
+    DuplicateEntityError -[hidden]down- IntegrityConstraintError
+  }
+}
+
+class "sqlite3.Connection" as Connection <<library>>
+
+IRepository <|.. SqliteRepository
+SqliteRepository --> Connection : SQL
+SqliteRepository ..> Species : маппинг row ↔ entity
+SqliteRepository ..> Observation
+SqliteRepository ..> PopulationRecord
+
+DataValidationError --|> DataAccessError
+EntityNotFoundError --|> DataAccessError
+DuplicateEntityError --|> DataAccessError
+IntegrityConstraintError --|> DataAccessError
+
+note bottom of SqliteRepository
+  Реализует IRepository из бизнес-слоя (DIP).
+  SQL без ORM; хранение — файл SQLite.
+  Интерфейс не зависит от конкретной СУБД.
+end note
+
+@enduml

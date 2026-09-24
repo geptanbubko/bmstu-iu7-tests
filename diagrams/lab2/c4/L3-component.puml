@@ -1,0 +1,26 @@
+@startuml
+!include ../../../tools/C4-PlantUML/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+title Wildlife Monitoring DB — компоненты backend (C4 L3)
+
+Container(web_ui, "Web UI", "Jinja2 / MVC", "HTML-формы и отчёты.")
+ContainerDb(db, "PostgreSQL", "СУБД")
+
+Container_Boundary(api, "Backend API") {
+    Component(ctrl, "Flask Controllers", "Flask", "Маршруты HTTP.")
+    Component(services, "Services", "Python", "Правила наблюдений, аналитики, справочников.")
+    Component(repo, "PostgresRepository", "Repository", "Доступ к данным через SQLAlchemy.")
+}
+
+Rel(web_ui, ctrl, "HTTP", "HTTPS")
+Rel(ctrl, services, "Вызывает")
+Rel(services, repo, "IRepository")
+Rel(repo, db, "SQL")
+
+note right of services
+  Сервисы зависят от IRepository,
+  а не от конкретной СУБД (DIP).
+end note
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+title Компонент бизнес-логики (C4 L4)
+
+skinparam shadowing false
+skinParam linetype polyline
+skinparam nodesep 25
+skinparam ranksep 40
+hide empty members
+hide circle
+
+left to right direction
+
+package "Сервисы" {
+  class ObservationService {
+    -repo: IRepository
+    +create_observation(request)
+  }
+  class AnalyticsService {
+    -repo: IRepository
+    +analyze_population(request)
+  }
+  class CatalogService {
+    -repo: IRepository
+    +add_species(name, common)
+  }
+  ObservationService -[hidden]down- AnalyticsService
+  AnalyticsService -[hidden]down- CatalogService
+}
+
+interface IRepository
+
+package "Системные сущности" {
+  class Observation <<domain>>
+  class PopulationRecord <<domain>>
+  class Species <<domain>>
+  Observation -[hidden]down- PopulationRecord
+  PopulationRecord -[hidden]down- Species
+}
+
+package "Транспортные (DTO)" {
+  class CreateObservationRequest
+  class PopulationAnalysisRequest
+  class PopulationAnalysisResult
+  CreateObservationRequest -[hidden]down- PopulationAnalysisRequest
+  PopulationAnalysisRequest -[hidden]down- PopulationAnalysisResult
+}
+
+class ValidationError <<exception>>
+class DuplicateSpeciesError <<exception>>
+ValidationError -[hidden]down- DuplicateSpeciesError
+
+ObservationService --> IRepository
+AnalyticsService --> IRepository
+CatalogService --> IRepository
+
+ObservationService ..> CreateObservationRequest
+AnalyticsService ..> PopulationAnalysisRequest
+AnalyticsService ..> PopulationAnalysisResult
+
+note bottom of IRepository
+  Все сервисы зависят
+  от IRepository (DIP).
+end note
+
+@enduml

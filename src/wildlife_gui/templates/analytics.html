@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Аналитика{% endblock %}
+{% block content %}
+<h2>Анализ динамики популяции</h2>
+<form method="post">
+  <label>Вид
+    <select name="species_id" required>
+      <option value="">— выберите —</option>
+      {% for item in state.species %}
+      <option value="{{ item.id }}" {% if state.values.get("species_id") == item.id|string %}selected{% endif %}>{{ item.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Локация (необязательно)
+    <select name="location_id">
+      <option value="">Все локации</option>
+      {% for item in state.locations %}
+      <option value="{{ item.id }}" {% if state.values.get("location_id") == item.id|string %}selected{% endif %}>{{ item.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Дата с
+    <input type="date" name="date_from" value="{{ state.values.get('date_from', '') }}" required>
+  </label>
+  <label>Дата по
+    <input type="date" name="date_to" value="{{ state.values.get('date_to', '') }}" required>
+  </label>
+  <button type="submit">Показать</button>
+</form>
+{% if state.records_count is not none %}
+<div class="card">
+  <p>Записей: {{ state.records_count }}</p>
+  {% if state.chart.line_points %}
+  <div class="chart">
+    <div class="chart-y" aria-hidden="true">
+      <span>{{ state.chart.y_max }}</span>
+      <span>0</span>
+    </div>
+    <div class="chart-plot">
+      <svg class="chart-svg" viewBox="0 0 100 40" preserveAspectRatio="none" role="img" aria-label="График численности популяции">
+        <polygon class="chart-area" points="{{ state.chart.area_points }}"></polygon>
+        <polyline class="chart-line" points="{{ state.chart.line_points }}"></polyline>
+      </svg>
+      <div class="chart-x">
+        {% for label in state.chart.x_labels %}
+        <span>{{ label }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p>Недостаточно данных для построения графика.</p>
+  {% endif %}
+  {% if state.rows %}
+  <table>
+    <thead>
+      <tr><th>Дата</th><th>Численность</th></tr>
+    </thead>
+    <tbody>
+      {% for row in state.rows %}
+      <tr><td>{{ row.date }}</td><td>{{ row.size }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

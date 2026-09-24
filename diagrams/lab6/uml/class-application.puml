@@ -1,0 +1,59 @@
+@startuml
+title Приложение целиком (C4 L4, лаб. №6)
+
+skinparam shadowing false
+skinParam linetype polyline
+hide empty members
+hide circle
+
+left to right direction
+
+package "wildlife-app (сборка)" {
+  class AppConfig
+  class "load_config()" as LoadConfig
+  class "setup_logging()" as SetupLogging
+  class "build_app() / main()" as Main
+  Main --> LoadConfig
+  Main --> SetupLogging
+  Main --> AppConfig
+}
+
+package "wildlife-ui" {
+  class ConsoleApp
+  interface IUserIO
+  class ConsoleIO
+  IUserIO <|.. ConsoleIO
+  ConsoleApp --> IUserIO
+}
+
+package "wildlife-business" {
+  class ObservationService
+  class CatalogService
+  class AnalyticsService
+  interface IRepository
+  ObservationService --> IRepository
+  CatalogService --> IRepository
+  AnalyticsService --> IRepository
+}
+
+package "wildlife-data" {
+  class SqliteRepository
+  IRepository <|.. SqliteRepository
+}
+
+Main --> ConsoleApp
+Main --> ObservationService
+Main --> CatalogService
+Main --> AnalyticsService
+Main --> SqliteRepository
+ConsoleApp --> ObservationService
+ConsoleApp --> CatalogService
+ConsoleApp --> AnalyticsService
+
+note bottom of Main
+  Компоненты собираются в отдельные .whl
+  и связываются в wildlife-app.
+  Порог тренда и путь к БД — из config.ini.
+end note
+
+@enduml

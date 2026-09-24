@@ -1,0 +1,31 @@
+@startuml
+title Sequence: добавление наблюдения (BPMN 10.1)
+
+actor "Исследователь" as R
+participant "Web UI" as UI
+participant "Observation Controller" as C
+participant "Observation Service" as S
+participant "PostgresRepository" as Repo
+database "PostgreSQL" as DB
+
+R -> UI : авторизация
+R -> UI : открыть форму наблюдения
+R -> UI : вид, локация, дата, количество, заметки
+UI -> C : POST /observations (DTO)
+C -> S : create_observation(request)
+S -> S : проверить обязательные поля и дату
+alt данные некорректны
+  S --> C : ValidationError
+  C --> UI : ошибка
+  UI --> R : сообщение об ошибке
+else данные корректны
+  S -> Repo : add_observation(observation)
+  Repo -> DB : INSERT observation
+  DB --> Repo : ok
+  Repo --> S : Observation
+  S --> C : Observation
+  C --> UI : 201 Created
+  UI --> R : наблюдение сохранено
+end
+
+@enduml

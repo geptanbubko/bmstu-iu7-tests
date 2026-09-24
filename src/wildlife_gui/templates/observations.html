@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Наблюдения{% endblock %}
+{% block content %}
+<div class="actions">
+  <h2>Наблюдения</h2>
+  <a class="button" href="{{ url_for('observation_new') }}">Добавить наблюдение</a>
+</div>
+{% if rows %}
+<table>
+  <thead>
+    <tr>
+      <th>id</th>
+      <th>Дата</th>
+      <th>Вид</th>
+      <th>Локация</th>
+      <th>Исследователь</th>
+      <th>Особей</th>
+      <th>Заметки</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.id }}</td>
+      <td>{{ row.date }}</td>
+      <td>{{ row.species }}</td>
+      <td>{{ row.location }}</td>
+      <td>{{ row.researcher }}</td>
+      <td>{{ row.count }}</td>
+      <td>{{ row.notes }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Наблюдений пока нет.</p>
+{% endif %}
+{% endblock %}

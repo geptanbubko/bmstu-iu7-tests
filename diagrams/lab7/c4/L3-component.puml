@@ -1,0 +1,39 @@
+@startuml
+!include ../../../tools/C4-PlantUML/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+title Wildlife Monitoring DB — компоненты (C4 L3, лаб. №7)
+
+Person(user, "Пользователь")
+ContainerDb(db, "SQLite")
+Container(cfg, "config.ini", "ini", "БД, тренд, логи, GUI host/port")
+Container(logfile, "app.log", "файл", "Действия и исключения")
+
+Container_Boundary(system, "Собранное приложение") {
+    Component(gui, "wildlife-gui", "wheel", "MVC: контроллеры, шаблоны Flask/Jinja2.")
+    Component(ui, "wildlife-ui", "wheel", "ConsoleApp, IUserIO — технологический UI.")
+    Component(biz, "wildlife-business", "wheel", "Сервисы, IRepository, сущности, DTO.")
+    Component(data, "wildlife-data", "wheel", "SqliteRepository, SQL без ORM.")
+    Component(app, "wildlife-app", "wheel", "Composition: конфиг, логи, сборка.")
+}
+
+Rel(user, gui, "HTTP / браузер")
+Rel(user, ui, "Команды консоли")
+Rel(app, cfg, "Читает")
+Rel(app, gui, "Создаёт Flask-приложение")
+Rel(app, ui, "Создаёт ConsoleApp")
+Rel(app, biz, "Создаёт сервисы")
+Rel(app, data, "Создаёт SqliteRepository")
+Rel(app, logfile, "Пишет лог")
+Rel(gui, biz, "DTO / сценарии")
+Rel(ui, biz, "DTO / сценарии")
+Rel(biz, data, "IRepository")
+Rel(data, db, "SQL")
+
+note right of gui
+  GUI не знает про SQLite.
+  Консоль сохранена и вызывает
+  те же сервисы.
+end note
+
+@enduml

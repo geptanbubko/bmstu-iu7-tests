@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Wildlife Monitoring{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Wildlife Monitoring DB</h1>
+      <p class="meta">Роль: {{ current_role_label }}{% if section %} · Раздел: {{ section }}{% endif %}</p>
+      {% if current_role %}
+      <nav>
+        {% if current_role == "researcher" %}
+          <a class="{{ 'active' if page == 'observations' }}" href="{{ url_for('observations') }}">Наблюдения</a>
+          <a class="{{ 'active' if page == 'observation_new' }}" href="{{ url_for('observation_new') }}">Добавить</a>
+          <a class="{{ 'active' if page == 'analytics' }}" href="{{ url_for('analytics_page') }}">Аналитика</a>
+        {% elif current_role == "admin" %}
+          <a class="{{ 'active' if page == 'species' }}" href="{{ url_for('species') }}">Виды</a>
+          <a class="{{ 'active' if page == 'locations' }}" href="{{ url_for('locations') }}">Локации</a>
+          <a class="{{ 'active' if page == 'researchers' }}" href="{{ url_for('researchers') }}">Исследователи</a>
+        {% endif %}
+        <form class="inline-form" method="post" action="{{ url_for('logout') }}">
+          <button class="secondary" type="submit">Сменить роль</button>
+        </form>
+      </nav>
+      {% endif %}
+    </header>
+    <main>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash">
+            {% for category, text in messages %}
+              <li class="{{ category }}">{{ text }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

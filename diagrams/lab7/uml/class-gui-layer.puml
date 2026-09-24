@@ -1,0 +1,83 @@
+@startuml
+title Компонент графического UI (C4 L4, MVC, лаб. №7)
+
+skinparam shadowing false
+skinParam linetype polyline
+skinparam nodesep 28
+skinparam ranksep 40
+hide empty members
+hide circle
+
+left to right direction
+
+package "View" {
+  class FlaskApp {
+    +create_flask_app()
+    +маршруты HTTP
+  }
+  class JinjaTemplates {
+    index / observations
+    analytics / species
+    locations / researchers
+  }
+  FlaskApp --> JinjaTemplates
+}
+
+package "Controller" {
+  class RoleController {
+    +select(role)
+  }
+  class ObservationController {
+    +list_rows()
+    +form_state()
+    +create(form)
+  }
+  class CatalogController {
+    +add_species()
+    +update_species()
+    +add_location()
+    +add_researcher()
+  }
+  class AnalyticsController {
+    +page(form)
+  }
+}
+
+package "Связь GUI ↔ бизнес-логика" {
+  class forms {
+    +parse_observation_form()
+    +parse_analytics_form()
+    +parse_species_form()
+  }
+}
+
+package "Model (wildlife-business)" {
+  class ObservationService
+  class CatalogService
+  class AnalyticsService
+  class CreateObservationRequest
+  class PopulationAnalysisRequest
+  class SaveSpeciesRequest
+}
+
+FlaskApp --> RoleController
+FlaskApp --> ObservationController
+FlaskApp --> CatalogController
+FlaskApp --> AnalyticsController
+ObservationController --> forms
+CatalogController --> forms
+AnalyticsController --> forms
+ObservationController --> ObservationService
+CatalogController --> CatalogService
+AnalyticsController --> AnalyticsService
+forms ..> CreateObservationRequest
+forms ..> PopulationAnalysisRequest
+forms ..> SaveSpeciesRequest
+
+note bottom of FlaskApp
+  Контроллеры не зависят от Flask и SQLite.
+  HTTP-адаптер только разбирает request
+  и отдаёт viewmodels в шаблоны.
+end note
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+title Компонент доступа к данным (C4 L4)
+
+package "Сущности БД (ORM)" {
+  class SpeciesModel
+  class ObservationModel
+  class PopulationRecordModel
+}
+
+package "Системные сущности (domain)" {
+  class Species <<domain>>
+  class Observation <<domain>>
+  class PopulationRecord <<domain>>
+}
+
+interface IRepository {
+  +add_observation(observation): Observation
+  +find_population_records(...): list[PopulationRecord]
+  +save_species(species): Species
+  +species_exists(name): bool
+}
+
+class PostgresRepository {
+  -session: Session
+  +add_observation(observation): Observation
+  +find_population_records(...): list[PopulationRecord]
+  +save_species(species): Species
+  +species_exists(name): bool
+}
+
+IRepository <|.. PostgresRepository
+PostgresRepository ..> SpeciesModel
+PostgresRepository ..> ObservationModel
+PostgresRepository ..> PopulationRecordModel
+PostgresRepository ..> Species : преобразует в/из ORM
+PostgresRepository ..> Observation : преобразует в/из ORM
+
+note right of PostgresRepository
+  Один репозиторий на все таблицы.
+  Отдельный Mapper не нужен — маппинг в методах класса.
+end note
+
+@enduml

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Исследователи{% endblock %}
+{% block content %}
+<h2>Исследователи</h2>
+<form method="post">
+  <label>ФИО
+    <input type="text" name="full_name" required>
+  </label>
+  <label>Организация
+    <input type="text" name="organization">
+  </label>
+  <button type="submit">Добавить исследователя</button>
+</form>
+{% if rows %}
+<table>
+  <thead>
+    <tr><th>id</th><th>ФИО</th><th>Организация</th></tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.id }}</td>
+      <td>{{ row.full_name }}</td>
+      <td>{{ row.organization }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Список исследователей пуст.</p>
+{% endif %}
+{% endblock %}

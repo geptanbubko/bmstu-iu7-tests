@@ -1,0 +1,59 @@
+@startuml
+title Компонент технологического UI (C4 L4, лаб. №5)
+
+skinparam shadowing false
+skinParam linetype polyline
+skinparam nodesep 28
+skinparam ranksep 40
+hide empty members
+hide circle
+
+left to right direction
+
+package "Технологический UI" {
+  class ConsoleApp {
+    +run()
+    +add_observation()
+    +list_observations()
+    +analyze_population()
+    +add_species()
+    +edit_species()
+    +add_location()
+    +add_researcher()
+  }
+  interface IUserIO {
+    +write(text)
+    +read(prompt): str
+  }
+  class ConsoleIO
+  IUserIO <|.. ConsoleIO
+  ConsoleApp --> IUserIO
+}
+
+package "Бизнес-логика (тот же компонент)" {
+  class ObservationService
+  class CatalogService
+  class AnalyticsService
+}
+
+package "Транспортные (DTO)" {
+  class CreateObservationRequest
+  class PopulationAnalysisRequest
+  class SaveSpeciesRequest
+}
+
+ConsoleApp --> ObservationService
+ConsoleApp --> CatalogService
+ConsoleApp --> AnalyticsService
+ConsoleApp ..> CreateObservationRequest
+ConsoleApp ..> PopulationAnalysisRequest
+ConsoleApp ..> SaveSpeciesRequest
+
+note bottom of ConsoleApp
+  Не зависит от SqliteRepository.
+  Конкретную БД подключает composition root (main).
+  Полноценный GUI заменит ConsoleApp,
+  сервисы останутся теми же.
+end note
+
+@enduml

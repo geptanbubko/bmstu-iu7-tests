@@ -1,0 +1,55 @@
+@startuml
+left to right direction
+
+entity "Вид животного" as Species {
+  * id
+  --
+  scientific_name
+  common_name
+  conservation_status
+  description
+}
+
+entity "Наблюдение" as Observation {
+  * id
+  --
+  observation_date
+  individuals_count
+  notes
+}
+
+entity "Локация" as Location {
+  * id
+  --
+  name
+  region
+  habitat_type
+  latitude
+  longitude
+}
+
+entity "Исследователь" as Researcher {
+  * id
+  --
+  full_name
+  organization
+  contact_info
+}
+
+entity "Учет численности" as PopulationRecord {
+  * id
+  --
+  record_date
+  population_size
+  method
+  notes
+}
+
+Researcher ||--o{ Observation : фиксирует
+Species ||--o{ Observation : относится к
+Location ||--o{ Observation : происходит в
+
+Researcher ||--o{ PopulationRecord : составляет
+Species ||--o{ PopulationRecord : учитывается в
+Location ||--o{ PopulationRecord : проводится в
+@enduml

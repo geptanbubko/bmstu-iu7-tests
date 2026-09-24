@@ -1,0 +1,40 @@
+@startuml
+title Sequence: управление справочником видов (BPMN 10.3)
+
+actor "Администратор" as A
+participant "Web UI" as UI
+participant "Catalog Controller" as C
+participant "Catalog Service" as S
+participant "PostgresRepository" as Repo
+database "PostgreSQL" as DB
+
+A -> UI : авторизация
+A -> UI : раздел видов, данные формы
+UI -> C : POST /catalog/species (DTO)
+C -> S : add_species(request)
+S -> S : проверить обязательные поля
+
+alt поля не заполнены
+  S --> C : ValidationError
+  C --> UI : ошибка
+  UI --> A : «Заполните все обязательные поля»
+else поля заполнены
+  S -> Repo : species_exists(name)
+  Repo -> DB : SELECT ...
+  DB --> Repo : exists?
+  alt вид уже есть
+    S --> C : DuplicateSpeciesError
+    C --> UI : ошибка
+    UI --> A : «Такой вид уже зарегистрирован»
+  else название уникально
+    S -> Repo : save_species(species)
+    Repo -> DB : INSERT species
+    DB --> Repo : ok
+    Repo --> S : Species
+    S --> C : Species
+    C --> UI : 201 Created
+    UI --> A : вид сохранён
+  end
+end
+
+@enduml

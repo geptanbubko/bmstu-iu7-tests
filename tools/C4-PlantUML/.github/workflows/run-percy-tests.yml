@@ -1,0 +1,31 @@
+name: Percy Tests
+on:
+  push:
+    paths:
+    - '*.puml'
+    - 'percy/**'
+    - '.github/workflows/run-percy-tests.yml'
+  pull_request:
+    branches:
+    - '**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+
+      - name: Process diagrams
+        uses: Timmy/plantuml-action@v1
+        with:
+          args: '-v percy -o _parsed -DRELATIVE_INCLUDE="./.."'
+
+      - name: Upload
+        run: npx @percy/cli upload percy/_parsed
+        env:
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}

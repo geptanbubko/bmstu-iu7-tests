@@ -1,0 +1,82 @@
+@startuml
+title Компонент бизнес-логики (C4 L4, лаб. №3)
+
+skinparam shadowing false
+skinParam linetype polyline
+skinparam nodesep 25
+skinparam ranksep 40
+hide empty members
+hide circle
+
+left to right direction
+
+package "Сервисы" {
+  class ObservationService {
+    -repo: IRepository
+    +create_observation(request)
+    -_validate(request)
+  }
+  class AnalyticsService {
+    -repo: IRepository
+    +analyze_population(request)
+  }
+  class CatalogService {
+    -repo: IRepository
+    +add_species(request)
+  }
+  ObservationService -[hidden]down- AnalyticsService
+  AnalyticsService -[hidden]down- CatalogService
+}
+
+interface IRepository
+
+package "Системные сущности" {
+  class Species <<domain>>
+  class Observation <<domain>>
+  class PopulationRecord <<domain>>
+  Species -[hidden]down- Observation
+  Observation -[hidden]down- PopulationRecord
+}
+
+package "Транспортные (DTO)" {
+  class CreateObservationRequest
+  class PopulationAnalysisRequest
+  class PopulationAnalysisResult
+  class SaveSpeciesRequest
+  CreateObservationRequest -[hidden]down- PopulationAnalysisRequest
+  PopulationAnalysisRequest -[hidden]down- PopulationAnalysisResult
+  PopulationAnalysisResult -[hidden]down- SaveSpeciesRequest
+}
+
+package "Исключения" {
+  class BusinessError <<exception>>
+  class ValidationError <<exception>>
+  class DuplicateSpeciesError <<exception>>
+  class NoDataError <<exception>>
+  BusinessError -[hidden]down- ValidationError
+  ValidationError -[hidden]down- DuplicateSpeciesError
+  DuplicateSpeciesError -[hidden]down- NoDataError
+}
+
+ValidationError --|> BusinessError
+DuplicateSpeciesError --|> BusinessError
+NoDataError --|> BusinessError
+
+ObservationService --> IRepository
+AnalyticsService --> IRepository
+CatalogService --> IRepository
+
+ObservationService ..> CreateObservationRequest
+ObservationService ..> ValidationError : raises
+AnalyticsService ..> PopulationAnalysisRequest
+AnalyticsService ..> PopulationAnalysisResult
+AnalyticsService ..> NoDataError : raises
+CatalogService ..> SaveSpeciesRequest
+CatalogService ..> DuplicateSpeciesError : raises
+
+note bottom of IRepository
+  Лаб. №3: в src/ только бизнес-логика.
+  Зависимость от IRepository — DIP.
+end note
+
+@enduml

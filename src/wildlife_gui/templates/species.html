@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Виды{% endblock %}
+{% block content %}
+<h2>{% if catalog.editing_id %}Изменение вида{% else %}Справочник видов{% endif %}</h2>
+<form method="post" action="{% if catalog.editing_id %}{{ url_for('species_update', species_id=catalog.editing_id) }}{% else %}{{ url_for('species_add') }}{% endif %}">
+  <label>Научное название
+    <input type="text" name="scientific_name" value="{{ catalog.scientific_name }}" required>
+  </label>
+  <label>Обычное название
+    <input type="text" name="common_name" value="{{ catalog.common_name }}" required>
+  </label>
+  <div class="actions">
+    <button type="submit">{% if catalog.editing_id %}Сохранить изменения{% else %}Добавить вид{% endif %}</button>
+    {% if catalog.editing_id %}<a href="{{ url_for('species') }}">Отмена</a>{% endif %}
+  </div>
+</form>
+{% if catalog.rows %}
+<table>
+  <thead>
+    <tr><th>id</th><th>Научное имя</th><th>Обычное имя</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for row in catalog.rows %}
+    <tr>
+      <td>{{ row.id }}</td>
+      <td>{{ row.scientific_name }}</td>
+      <td>{{ row.common_name }}</td>
+      <td><a href="{{ url_for('species_edit', species_id=row.id) }}">Изменить</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Справочник видов пуст.</p>
+{% endif %}
+{% endblock %}

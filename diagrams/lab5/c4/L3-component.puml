@@ -1,0 +1,30 @@
+@startuml
+!include ../../../tools/C4-PlantUML/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+title Wildlife Monitoring DB — компоненты (C4 L3, лаб. №5)
+
+Person(researcher, "Исследователь")
+Person(admin, "Администратор")
+ContainerDb(db, "SQLite", "файл БД")
+
+Container_Boundary(app, "Приложение") {
+    Component(ui, "ConsoleApp", "Python", "Технологический UI: меню, ввод, вывод.")
+    Component(io, "IUserIO", "Python", "Абстракция ввода-вывода.")
+    Component(services, "Services", "Python", "Observation / Catalog / Analytics.")
+    Component(repo, "SqliteRepository", "Repository", "SQL без ORM, реализует IRepository.")
+}
+
+Rel(researcher, ui, "Команды")
+Rel(admin, ui, "Команды")
+Rel(ui, io, "читает / пишет")
+Rel(ui, services, "DTO и вызовы сценариев")
+Rel(services, repo, "IRepository")
+Rel(repo, db, "SQL")
+
+note right of ui
+  UI не знает про SQLite.
+  Сборка в src/main.py (DIP).
+end note
+
+@enduml

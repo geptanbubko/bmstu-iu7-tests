@@ -1,0 +1,35 @@
+@startuml
+title Sequence: анализ динамики популяции (BPMN 10.2)
+
+actor "Исследователь" as R
+participant "Web UI" as UI
+participant "Analytics Controller" as C
+participant "Analytics Service" as S
+participant "PostgresRepository" as Repo
+database "PostgreSQL" as DB
+
+R -> UI : авторизация
+R -> UI : раздел аналитики, вид и период
+UI -> C : GET /analytics?species&from&to
+C -> S : analyze_population(request)
+S -> Repo : find_population_records(filters)
+Repo -> DB : SELECT population_records ...
+DB --> Repo : rows
+Repo --> S : list[PopulationRecord]
+
+alt данных нет
+  S --> C : пустой результат
+  C --> UI : 404 / сообщение
+  UI --> R : «Данные за период отсутствуют»
+else записей < 5
+  S --> C : таблица без тренда
+  C --> UI : предупреждение
+  UI --> R : таблица + «Недостаточно данных для тренда»
+else записей >= 5
+  S -> S : построить график и отчёт
+  S --> C : PopulationAnalysisResult
+  C --> UI : JSON + график
+  UI --> R : динамика численности
+end
+
+@enduml

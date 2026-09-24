@@ -1,0 +1,50 @@
+// Wildlife Monitoring DB — PostgreSQL
+
+Table researchers {
+  id integer [primary key, increment]
+  full_name varchar(200) [not null]
+  organization varchar(200)
+  contact_info varchar(200)
+}
+
+Table species {
+  id integer [primary key, increment]
+  scientific_name varchar(200) [not null, unique]
+  common_name varchar(200) [not null]
+  conservation_status varchar(50)
+  description text
+}
+
+Table locations {
+  id integer [primary key, increment]
+  name varchar(200) [not null]
+  region varchar(200)
+  habitat_type varchar(100)
+  latitude decimal(9,6)
+  longitude decimal(9,6)
+}
+
+Table observations {
+  id integer [primary key, increment]
+  observation_date date [not null]
+  individuals_count integer [not null]
+  notes text
+  species_id integer [not null, ref: > species.id]
+  location_id integer [not null, ref: > locations.id]
+  researcher_id integer [not null, ref: > researchers.id]
+}
+
+Table population_records {
+  id integer [primary key, increment]
+  record_date date [not null]
+  population_size integer [not null]
+  method varchar(100)
+  notes text
+  species_id integer [not null, ref: > species.id]
+  location_id integer [not null, ref: > locations.id]
+  researcher_id integer [not null, ref: > researchers.id]
+
+  indexes {
+    (species_id, location_id, record_date) [unique]
+  }
+}

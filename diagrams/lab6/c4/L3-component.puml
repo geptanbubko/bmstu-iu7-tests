@@ -1,0 +1,34 @@
+@startuml
+!include ../../../tools/C4-PlantUML/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+title Wildlife Monitoring DB — компоненты (C4 L3, лаб. №6)
+
+Person(user, "Пользователь")
+ContainerDb(db, "SQLite")
+Container(cfg, "config.ini", "ini", "connection_string, min_records_for_trend, logging")
+Container(logfile, "app.log", "файл", "Действия и исключения")
+
+Container_Boundary(system, "Собранное приложение") {
+    Component(ui, "wildlife-ui", "wheel", "ConsoleApp, IUserIO — технологический UI.")
+    Component(biz, "wildlife-business", "wheel", "Сервисы, IRepository, сущности, DTO.")
+    Component(data, "wildlife-data", "wheel", "SqliteRepository, SQL без ORM.")
+    Component(app, "wildlife-app", "wheel", "Composition: конфиг, логи, сборка.")
+}
+
+Rel(user, ui, "Команды")
+Rel(app, cfg, "Читает")
+Rel(app, ui, "Создаёт ConsoleApp")
+Rel(app, biz, "Создаёт сервисы")
+Rel(app, data, "Создаёт SqliteRepository")
+Rel(app, logfile, "Пишет лог")
+Rel(ui, biz, "DTO / сценарии")
+Rel(biz, data, "IRepository")
+Rel(data, db, "SQL")
+
+note right of biz
+  GUI заменит wildlife-ui.
+  wildlife-business и wildlife-data останутся.
+end note
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+!include ../../../tools/C4-PlantUML/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+title Wildlife Monitoring DB — контейнеры (C4 L2, лаб. №5)
+
+Person(researcher, "Исследователь")
+Person(admin, "Администратор")
+
+System_Boundary(sys, "Wildlife Monitoring DB") {
+    Container(console, "Технологический UI", "Python, консоль", "Меню ролей и сценариев для системного тестирования. Позже будет заменён GUI.")
+    Container(app, "Приложение", "Python", "Те же сервисы бизнес-логики, что будет вызывать полноценный GUI.")
+    ContainerDb(db, "База данных", "SQLite", "Персистентное хранение видов, локаций, наблюдений и учётов.")
+}
+
+Rel(researcher, console, "Выбирает сценарии", "stdin/stdout")
+Rel(admin, console, "Ведёт справочники", "stdin/stdout")
+Rel(console, app, "Вызывает сервисы")
+Rel(app, db, "SQL")
+
+note right of console
+  Не HTTP и не Swagger:
+  собственный консольный UI.
+end note
+
+@enduml

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wildlife-app"
+version = "1.0.0"
+description = "Сборка приложения Wildlife Monitoring"
+requires-python = ">=3.11"
+dependencies = [
+    "wildlife-business==1.0.0",
+    "wildlife-data==1.0.0",
+    "wildlife-ui==1.0.0",
+    "wildlife-gui==1.0.0",
+]
+
+[project.scripts]
+wildlife-monitor = "wildlife_app.main:main"
+
+[tool.setuptools.package-dir]
+"" = "../../src"
+
+[tool.setuptools.packages.find]
+where = ["../../src"]
+include = ["wildlife_app*"]

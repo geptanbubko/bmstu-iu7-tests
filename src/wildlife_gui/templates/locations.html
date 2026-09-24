@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Локации{% endblock %}
+{% block content %}
+<h2>Локации</h2>
+<form method="post">
+  <label>Название
+    <input type="text" name="name" required>
+  </label>
+  <label>Регион
+    <input type="text" name="region">
+  </label>
+  <button type="submit">Добавить локацию</button>
+</form>
+{% if rows %}
+<table>
+  <thead>
+    <tr><th>id</th><th>Название</th><th>Регион</th></tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row.id }}</td>
+      <td>{{ row.name }}</td>
+      <td>{{ row.region }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Справочник локаций пуст.</p>
+{% endif %}
+{% endblock %}

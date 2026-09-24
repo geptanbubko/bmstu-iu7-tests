@@ -1,0 +1,21 @@
+@startuml
+!include ../../../tools/C4-PlantUML/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+title Wildlife Monitoring DB — контейнеры (C4 L2)
+
+Person(researcher, "Исследователь")
+Person(admin, "Администратор")
+
+System_Boundary(sys, "Wildlife Monitoring DB") {
+    Container(web_ui, "Web UI", "HTML, CSS, Jinja2", "Формы и страницы MPA: наблюдения, аналитика, справочники.")
+    Container(api, "Backend API", "Python, Flask", "REST и бизнес-логика, аутентификация.")
+    ContainerDb(db, "База данных", "PostgreSQL", "Хранение видов, локаций, наблюдений и учётов численности.")
+}
+
+Rel(researcher, web_ui, "Открывает страницы", "HTTPS")
+Rel(admin, web_ui, "Управляет справочниками", "HTTPS")
+Rel(web_ui, api, "Запросы данных", "JSON/HTTPS")
+Rel(api, db, "Читает и записывает", "SQL")
+
+@enduml
