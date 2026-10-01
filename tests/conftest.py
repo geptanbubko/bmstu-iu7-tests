@@ -1,0 +1,60 @@
+"""Поднимает тестовое окружение на старте сессии и закрывает его после всех тестов."""
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from wildlife_business.analytics_service import AnalyticsService
+from wildlife_business.catalog_service import CatalogService
+from wildlife_business.observation_service import ObservationService
+from tests.fakes import FakeRepository
+
+
+def _substituted_connection() -> MagicMock:
+    connection = MagicMock(name="substituted_sqlite_connection")
+    cursor = MagicMock(name="substituted_sqlite_cursor")
+    cursor.fetchone.return_value = None
+    cursor.fetchall.return_value = []
+    cursor.lastrowid = 1
+    cursor.rowcount = 0
+    connection.execute.return_value = cursor
+    connection.cursor.return_value = cursor
+    return connection
+
+
+@pytest.fixture(scope="session", autouse=True)
+def test_runtime():
+    """Подменяет sqlite3.connect: реальная БД и :memory: не используются."""
+    connection = _substituted_connection()
+
+    def factory(database, *args, **kwargs):
+        if database == ":memory:":
+            raise AssertionError("In-memory SQLite в тестах запрещён")
+        connection._opened_with = database
+        return connection
+
+    with patch("wildlife_data.sqlite_repository.sqlite3.connect", side_effect=factory) as connect:
+        yield {"connect": connect, "connection": connection}
+    connection.close()
+
+
+@pytest.fixture
+def substituted_connection(test_runtime):
+    return test_runtime["connection"]
+
+
+@pytest.fixture
+def connect_spy(test_runtime):
+    return test_runtime["connect"]
+
+
+@pytest.fixture
+def services():
+    repo = FakeRepository()
+    return {
+        "repo": repo,
+        "catalog": CatalogService(repo),
+        "observations": ObservationService(repo),
+        "analytics": AnalyticsService(repo),
+    }

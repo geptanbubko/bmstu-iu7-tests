@@ -1,5 +1,10 @@
 __pycache__/
 .pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.scannerwork/
+.sonar-token
 *.pyc
 *.db
 labs.rar

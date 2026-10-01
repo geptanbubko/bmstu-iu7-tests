@@ -208,12 +208,29 @@ ORM-модели, доменные сущности, интерфейс `IReposi
 
 Сервисы зависят от `IRepository` (DIP). Правила по BPMN из п. 10.
 
-Запуск unit-тестов (моки, без БД):
+Запуск тестов (классические + лондонские, без реальной БД):
 
 ```bash
 pip install -r requirements.txt
 py -m pytest
 ```
+
+Локальный HTML-отчёт покрытия: `htmlcov/index.html`.
+
+UI SonarQube (Coverage на дашборде проекта):
+
+```powershell
+.\scripts\sonar-coverage.bat
+```
+
+Если PowerShell ругается на execution policy, то же самое так:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\sonar-coverage.ps1
+```
+
+После загрузки: http://localhost:9000/dashboard?id=wildlife-monitoring  
+Логин: `admin` / `Admin12345!!!` (если сервер ещё с паролем по умолчанию — `admin` / `admin`).
 
 
 
@@ -249,7 +266,7 @@ py -m pytest
 
 CRUD видов: `save_species`, `get_species`, `update_species`, `delete_species`. Также реализованы `add_observation`, `find_population_records`, `species_exists`.
 
-Запуск тестов (unit бизнес-логики + интеграционные к SQLite):
+Запуск тестов:
 
 ```bash
 pip install -r requirements.txt
@@ -296,10 +313,10 @@ py -m wildlife_app
 
 Файл БД по умолчанию: `wildlife.db` (можно передать путь первым аргументом).
 
-Системные тесты (консоль + сервисы + реальная SQLite, без моков):
+Классические тесты длинного сценария:
 
 ```bash
-py -m pytest tests/test_console_system.py
+py -m pytest -m classical
 ```
 
 
@@ -434,10 +451,10 @@ py -m wildlife_app --ui gui
 
 Пересборка колёс: `.\scripts\build_components.ps1` — в `[assembled/](assembled/)` появляется `wildlife_gui-*.whl`. Запуск GUI из сборок: `assembled\run-gui.bat`.
 
-Тесты контроллеров и HTTP-потока:
+Лондонские тесты взаимодействий:
 
 ```bash
-py -m pytest tests/test_gui.py
+py -m pytest -m london
 ```
 
 ## 31. C4 L1–L3 (обновление) и L4 GUI

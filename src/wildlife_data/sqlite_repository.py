@@ -22,16 +22,16 @@ DatabasePath = Union[str, Path]
 
 
 class SqliteRepository(IRepository):
-    def __init__(self, database: DatabasePath) -> None:
+    def __init__(self, database: DatabasePath, connection_factory=None) -> None:
         self._database = str(database)
+        self._connection_factory = connection_factory or sqlite3.connect
         self._local = threading.local()
-        self._conn
 
     @property
     def _conn(self) -> sqlite3.Connection:
         conn = getattr(self._local, "conn", None)
         if conn is None:
-            conn = sqlite3.connect(self._database)
+            conn = self._connection_factory(self._database)
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA foreign_keys = ON")
             conn.executescript(SCHEMA_SQL)

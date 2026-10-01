@@ -1,0 +1,9 @@
+[run]
+relative_files = true
+source = src
+
+[report]
+omit =
+    tests/*
+    tools/*
+    assembled/*
