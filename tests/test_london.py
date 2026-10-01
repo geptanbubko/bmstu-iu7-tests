@@ -47,8 +47,9 @@ def test_invalid_observation_does_not_touch_repository() -> None:
     repo = Mock()
     service = ObservationService(repo)
 
+    request = CreateObservationRequest(1, 2, 3, date(2026, 3, 1), -4)
     with pytest.raises(ValidationError, match="отрицательным"):
-        service.create_observation(CreateObservationRequest(1, 2, 3, date(2026, 3, 1), -4))
+        service.create_observation(request)
 
     repo.add_observation.assert_not_called()
     repo.upsert_population_record.assert_not_called()
@@ -76,8 +77,9 @@ def test_update_species_stops_when_missing() -> None:
     repo.get_species.return_value = None
     service = CatalogService(repo)
 
+    request = SaveSpeciesRequest("Canis lupus", "Волк")
     with pytest.raises(NotFoundError, match="не найден"):
-        service.update_species(9, SaveSpeciesRequest("Canis lupus", "Волк"))
+        service.update_species(9, request)
 
     repo.get_species.assert_called_once_with(9)
     repo.update_species.assert_not_called()

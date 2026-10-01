@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Исследователи</h2>
 <form method="post">
+  {% include "_csrf.html" %}
   <label>ФИО
     <input type="text" name="full_name" required>
   </label>

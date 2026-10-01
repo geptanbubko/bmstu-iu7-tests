@@ -6,6 +6,7 @@
 <p class="empty">Сначала администратор должен заполнить справочники видов, локаций и исследователей.</p>
 {% endif %}
 <form method="post">
+  {% include "_csrf.html" %}
   <label>Вид
     <select name="species_id" required>
       <option value="">— выберите —</option>

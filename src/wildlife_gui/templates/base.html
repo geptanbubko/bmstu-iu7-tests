@@ -23,6 +23,7 @@
           <a class="{{ 'active' if page == 'researchers' }}" href="{{ url_for('researchers') }}">Исследователи</a>
         {% endif %}
         <form class="inline-form" method="post" action="{{ url_for('logout') }}">
+          {% include "_csrf.html" %}
           <button class="secondary" type="submit">Сменить роль</button>
         </form>
       </nav>

@@ -7,6 +7,7 @@
     <h2>Исследователь</h2>
     <p>Фиксация наблюдений и анализ динамики популяции.</p>
     <form method="post" action="{{ url_for('select_role') }}">
+      {% include "_csrf.html" %}
       <input type="hidden" name="role" value="researcher">
       <button type="submit">Войти как исследователь</button>
     </form>
@@ -15,6 +16,7 @@
     <h2>Администратор</h2>
     <p>Справочники видов, локаций и исследователей.</p>
     <form method="post" action="{{ url_for('select_role') }}">
+      {% include "_csrf.html" %}
       <input type="hidden" name="role" value="admin">
       <button type="submit">Войти как администратор</button>
     </form>

@@ -3,6 +3,7 @@
 {% block content %}
 <h2>{% if catalog.editing_id %}Изменение вида{% else %}Справочник видов{% endif %}</h2>
 <form method="post" action="{% if catalog.editing_id %}{{ url_for('species_update', species_id=catalog.editing_id) }}{% else %}{{ url_for('species_add') }}{% endif %}">
+  {% include "_csrf.html" %}
   <label>Научное название
     <input type="text" name="scientific_name" value="{{ catalog.scientific_name }}" required>
   </label>

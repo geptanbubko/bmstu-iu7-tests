@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Локации</h2>
 <form method="post">
+  {% include "_csrf.html" %}
   <label>Название
     <input type="text" name="name" required>
   </label>

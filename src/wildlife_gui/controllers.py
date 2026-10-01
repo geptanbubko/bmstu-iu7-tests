@@ -35,8 +35,18 @@ from wildlife_gui.viewmodels import (
 )
 
 logger = logging.getLogger("wildlife.gui")
+_BUSINESS_ERROR_LOG = "Исключение бизнес-логики: %s"
 
 T = TypeVar("T")
+
+
+def _log_business_error(exc: BusinessError) -> None:
+    logger.warning(_BUSINESS_ERROR_LOG, exc, exc_info=True)
+
+
+def _failed_action(exc: BusinessError) -> ActionResult:
+    _log_business_error(exc)
+    return ActionResult(False, str(exc))
 
 
 def _options(items: Iterable[T], label_of: Callable[[T], str]) -> list[CatalogOption]:
@@ -106,8 +116,7 @@ class ObservationController:
         try:
             saved = self._observations.create_observation(parse_observation_form(data))
         except BusinessError as exc:
-            logger.warning("Исключение бизнес-логики: %s", exc, exc_info=True)
-            return ActionResult(False, str(exc))
+            return _failed_action(exc)
         logger.info(
             "Пользователь добавил наблюдение id=%s species=%s location=%s count=%s",
             saved.id,
@@ -138,7 +147,7 @@ class AnalyticsController:
         try:
             result = self._analytics.analyze_population(parse_analytics_form(data))
         except BusinessError as exc:
-            logger.warning("Исключение бизнес-логики: %s", exc, exc_info=True)
+            _log_business_error(exc)
             state.error = str(exc)
             return state
         logger.info(
@@ -179,8 +188,7 @@ class CatalogController:
         try:
             saved = self._catalog.add_species(parse_species_form(data))
         except BusinessError as exc:
-            logger.warning("Исключение бизнес-логики: %s", exc, exc_info=True)
-            return ActionResult(False, str(exc))
+            return _failed_action(exc)
         logger.info("Пользователь добавил вид id=%s (%s)", saved.id, saved.scientific_name)
         return ActionResult(True, f"Вид сохранён, id={saved.id} ({saved.scientific_name})")
 
@@ -188,8 +196,7 @@ class CatalogController:
         try:
             updated = self._catalog.update_species(species_id, parse_species_form(data))
         except BusinessError as exc:
-            logger.warning("Исключение бизнес-логики: %s", exc, exc_info=True)
-            return ActionResult(False, str(exc))
+            return _failed_action(exc)
         logger.info("Пользователь изменил вид id=%s", species_id)
         return ActionResult(
             True, f"Вид изменён: {updated.scientific_name} / {updated.common_name}"
@@ -205,8 +212,7 @@ class CatalogController:
         try:
             saved = self._catalog.add_location(parse_location_form(data))
         except BusinessError as exc:
-            logger.warning("Исключение бизнес-логики: %s", exc, exc_info=True)
-            return ActionResult(False, str(exc))
+            return _failed_action(exc)
         logger.info("Пользователь добавил локацию id=%s (%s)", saved.id, saved.name)
         return ActionResult(True, f"Локация сохранена, id={saved.id} ({saved.name})")
 
@@ -220,8 +226,7 @@ class CatalogController:
         try:
             saved = self._catalog.add_researcher(parse_researcher_form(data))
         except BusinessError as exc:
-            logger.warning("Исключение бизнес-логики: %s", exc, exc_info=True)
-            return ActionResult(False, str(exc))
+            return _failed_action(exc)
         logger.info("Пользователь добавил исследователя id=%s", saved.id)
         return ActionResult(True, f"Исследователь сохранён, id={saved.id} ({saved.full_name})")
 

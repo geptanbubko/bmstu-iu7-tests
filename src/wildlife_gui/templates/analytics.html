@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Анализ динамики популяции</h2>
 <form method="post">
+  {% include "_csrf.html" %}
   <label>Вид
     <select name="species_id" required>
       <option value="">— выберите —</option>

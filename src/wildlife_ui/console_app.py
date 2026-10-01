@@ -17,6 +17,8 @@ from wildlife_ui.io import IUserIO
 from wildlife_ui.parsing import parse_date, parse_int, parse_optional_int, parse_optional_text
 
 logger = logging.getLogger("wildlife.ui")
+PROMPT_CHOICE = "Выбор: "
+PROMPT_SPECIES_ID = "ID вида: "
 
 
 class ConsoleApp:
@@ -38,7 +40,7 @@ class ConsoleApp:
         while True:
             self._io.write("")
             self._io.write("Роль: 1) Исследователь  2) Администратор  0) Выход")
-            choice = self._io.read("Выбор: ").strip()
+            choice = self._io.read(PROMPT_CHOICE).strip()
             if choice == "0":
                 logger.info("Пользователь вышел из приложения")
                 self._io.write("Выход.")
@@ -58,7 +60,7 @@ class ConsoleApp:
         self._print_locations()
         self._print_researchers()
         request = CreateObservationRequest(
-            species_id=parse_int(self._io.read("ID вида: "), "вид"),
+            species_id=parse_int(self._io.read(PROMPT_SPECIES_ID), "вид"),
             location_id=parse_int(self._io.read("ID локации: "), "локация"),
             researcher_id=parse_int(self._io.read("ID исследователя: "), "исследователь"),
             observation_date=parse_date(self._io.read("Дата (ГГГГ-ММ-ДД): "), "дата"),
@@ -96,7 +98,7 @@ class ConsoleApp:
             self._io.read("ID локации (пусто — все): "), "локация"
         )
         request = PopulationAnalysisRequest(
-            species_id=parse_int(self._io.read("ID вида: "), "вид"),
+            species_id=parse_int(self._io.read(PROMPT_SPECIES_ID), "вид"),
             date_from=parse_date(self._io.read("Дата с (ГГГГ-ММ-ДД): "), "дата начала"),
             date_to=parse_date(self._io.read("Дата по (ГГГГ-ММ-ДД): "), "дата окончания"),
             location_id=location_id,
@@ -127,7 +129,7 @@ class ConsoleApp:
 
     def edit_species(self) -> None:
         self._print_species()
-        species_id = parse_int(self._io.read("ID вида: "), "вид")
+        species_id = parse_int(self._io.read(PROMPT_SPECIES_ID), "вид")
         updated = self._catalog.update_species(
             species_id,
             SaveSpeciesRequest(
@@ -174,7 +176,7 @@ class ConsoleApp:
                 "Исследователь: 1) Добавить наблюдение  2) Список наблюдений  "
                 "3) Аналитика  0) Назад"
             )
-            choice = self._io.read("Выбор: ").strip()
+            choice = self._io.read(PROMPT_CHOICE).strip()
             if choice == "0":
                 return
             actions = {
@@ -192,7 +194,7 @@ class ConsoleApp:
                 "4) Добавить локацию  5) Список локаций  "
                 "6) Добавить исследователя  7) Список исследователей  0) Назад"
             )
-            choice = self._io.read("Выбор: ").strip()
+            choice = self._io.read(PROMPT_CHOICE).strip()
             if choice == "0":
                 return
             actions = {

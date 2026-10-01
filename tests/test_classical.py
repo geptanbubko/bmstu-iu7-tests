@@ -72,9 +72,10 @@ def test_full_catalog_observation_and_trend_flow(services) -> None:
 def test_duplicate_species_is_rejected(services) -> None:
     catalog = services["catalog"]
     catalog.add_species(SaveSpeciesRequest("Lynx lynx", "Рысь"))
+    duplicate = SaveSpeciesRequest("Lynx lynx", "Евразийская рысь")
 
     with pytest.raises(DuplicateSpeciesError, match="уже зарегистрирован"):
-        catalog.add_species(SaveSpeciesRequest("Lynx lynx", "Евразийская рысь"))
+        catalog.add_species(duplicate)
 
     assert len(catalog.list_species()) == 1
 
@@ -83,31 +84,29 @@ def test_duplicate_species_is_rejected(services) -> None:
 def test_future_observation_does_not_change_store(services) -> None:
     _seed_catalog(services["catalog"])
 
+    future = CreateObservationRequest(1, 2, 3, date(2099, 1, 1), 1)
     with pytest.raises(ValidationError, match="будущем"):
-        services["observations"].create_observation(
-            CreateObservationRequest(1, 2, 3, date(2099, 1, 1), 1)
-        )
+        services["observations"].create_observation(future)
 
     assert services["observations"].list_observations() == []
+    empty_period = PopulationAnalysisRequest(1, date(2026, 1, 1), date(2026, 12, 31))
     with pytest.raises(NoDataError):
-        services["analytics"].analyze_population(
-            PopulationAnalysisRequest(1, date(2026, 1, 1), date(2026, 12, 31))
-        )
+        services["analytics"].analyze_population(empty_period)
 
 
 @pytest.mark.classical
 def test_analysis_without_records_fails(services) -> None:
     _seed_catalog(services["catalog"])
 
+    request = PopulationAnalysisRequest(1, date(2026, 1, 1), date(2026, 1, 31))
     with pytest.raises(NoDataError, match="отсутствуют"):
-        services["analytics"].analyze_population(
-            PopulationAnalysisRequest(1, date(2026, 1, 1), date(2026, 1, 31))
-        )
+        services["analytics"].analyze_population(request)
 
 
 @pytest.mark.classical
 def test_empty_species_name_is_rejected(services) -> None:
+    request = SaveSpeciesRequest("   ", "Волк")
     with pytest.raises(ValidationError, match="обязательные"):
-        services["catalog"].add_species(SaveSpeciesRequest("   ", "Волк"))
+        services["catalog"].add_species(request)
 
     assert services["catalog"].list_species() == []
