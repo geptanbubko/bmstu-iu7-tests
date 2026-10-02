@@ -95,6 +95,24 @@ def test_future_observation_does_not_change_store(services) -> None:
 
 
 @pytest.mark.classical
+def test_observation_without_reference_does_not_change_store(services) -> None:
+    _seed_catalog(services["catalog"])
+    observations = services["observations"]
+    day = date(2026, 1, 10)
+    rejected = (
+        (CreateObservationRequest(0, 2, 3, day, 3, "без вида"), "вид животного"),
+        (CreateObservationRequest(1, 0, 3, day, 3, "без локации"), "локацию"),
+        (CreateObservationRequest(1, 2, 0, day, 3, "без исследователя"), "исследователя"),
+    )
+
+    for request, message in rejected:
+        with pytest.raises(ValidationError, match=message):
+            observations.create_observation(request)
+
+    assert observations.list_observations() == []
+
+
+@pytest.mark.classical
 def test_analysis_without_records_fails(services) -> None:
     _seed_catalog(services["catalog"])
 
