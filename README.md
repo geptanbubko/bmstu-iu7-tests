@@ -229,8 +229,7 @@ UI SonarQube (Coverage на дашборде проекта):
 powershell -ExecutionPolicy Bypass -File .\scripts\sonar-coverage.ps1
 ```
 
-После загрузки: http://localhost:9000/dashboard?id=wildlife-monitoring  
-Логин: `admin` / `Admin12345!!!` (если сервер ещё с паролем по умолчанию — `admin` / `admin`).
+После загрузки: http://localhost:9000/dashboard?id=wildlife-monitoring
 
 
 
