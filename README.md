@@ -217,6 +217,14 @@ py -m pytest
 
 Локальный HTML-отчёт покрытия: `htmlcov/index.html`.
 
+Отчёт Allure (шаги, эпики, классическая и лондонская школы):
+
+```powershell
+.\scripts\allure-report.bat
+```
+
+`py -m pytest` сам пишет сырые результаты в `allure-results/`. Скрипт собирает HTML в `allure-report/` и открывает его. Для HTML нужны Java 17+ и Allure CLI: если CLI нет в PATH, скрипт скачивает Allure 2.46.1 в `tools/`.
+
 UI SonarQube (Coverage на дашборде проекта):
 
 ```powershell

@@ -1,6 +1,9 @@
 """Поднимает тестовое окружение на старте сессии и закрывает его после всех тестов."""
 from __future__ import annotations
 
+import platform
+import shutil
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -58,3 +61,29 @@ def services():
         "observations": ObservationService(repo),
         "analytics": AnalyticsService(repo),
     }
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Кладёт окружение и категории в каталог сырых результатов Allure."""
+    report_dir = getattr(session.config.option, "allure_report_dir", None)
+    if not report_dir:
+        return
+
+    target = Path(report_dir)
+    target.mkdir(parents=True, exist_ok=True)
+    properties = "\n".join(
+        (
+            "Project=Wildlife Monitoring DB",
+            f"Python={platform.python_version()}",
+            f"OS={platform.system()} {platform.release()}",
+            "Framework=pytest",
+            "Database=substituted sqlite3.connect",
+            "Schools=classical, london",
+            "",
+        )
+    )
+    (target / "environment.properties").write_text(properties, encoding="utf-8")
+
+    categories = Path(__file__).resolve().parents[1] / "allure" / "categories.json"
+    if categories.is_file():
+        shutil.copyfile(categories, target / "categories.json")

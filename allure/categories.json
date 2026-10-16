@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Падения проверок",
+    "matchedStatuses": ["failed"]
+  },
+  {
+    "name": "Сломанные тесты",
+    "matchedStatuses": ["broken"]
+  }
+]

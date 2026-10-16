@@ -3,6 +3,9 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
+allure-results/
+allure-report/
+tools/allure-*/
 .scannerwork/
 .sonar-token
 *.pyc
