@@ -3,15 +3,16 @@ from __future__ import annotations
 
 import platform
 import shutil
+import sqlite3
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from wildlife_business.analytics_service import AnalyticsService
-from wildlife_business.catalog_service import CatalogService
-from wildlife_business.observation_service import ObservationService
-from tests.fakes import FakeRepository
+from wildlife_data.sqlite_repository import SqliteRepository
+
+# Настоящий connect, сохранённый до подмены: классические тесты открывают :memory:.
+_REAL_SQLITE_CONNECT = sqlite3.connect
 
 
 def _substituted_connection() -> MagicMock:
@@ -28,12 +29,12 @@ def _substituted_connection() -> MagicMock:
 
 @pytest.fixture(scope="session", autouse=True)
 def test_runtime():
-    """Подменяет sqlite3.connect: реальная БД и :memory: не используются."""
+    """Подменяет sqlite3.connect для файловых путей: файл БД не открывается."""
     connection = _substituted_connection()
 
     def factory(database, *args, **kwargs):
         if database == ":memory:":
-            raise AssertionError("In-memory SQLite в тестах запрещён")
+            raise AssertionError("In-memory SQLite через подмену connect запрещён")
         connection._opened_with = database
         return connection
 
@@ -53,14 +54,13 @@ def connect_spy(test_runtime):
 
 
 @pytest.fixture
-def services():
-    repo = FakeRepository()
-    return {
-        "repo": repo,
-        "catalog": CatalogService(repo),
-        "observations": ObservationService(repo),
-        "analytics": AnalyticsService(repo),
-    }
+def repository():
+    """SQLite :memory: на один тест. Соединение закрывается после него."""
+    repo = SqliteRepository(":memory:", connection_factory=_REAL_SQLITE_CONNECT)
+    try:
+        yield repo
+    finally:
+        repo.close()
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
@@ -77,7 +77,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             f"Python={platform.python_version()}",
             f"OS={platform.system()} {platform.release()}",
             "Framework=pytest",
-            "Database=substituted sqlite3.connect",
+            "Database=classical sqlite :memory:, london substituted sqlite3.connect",
             "Schools=classical, london",
             "",
         )
