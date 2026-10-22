@@ -1,5 +1,6 @@
 pytest>=8.0
 pytest-cov>=5.0
+pytest-random-order>=1.1
 allure-pytest>=2.16
 flask>=3.0
 flask-wtf>=1.2
