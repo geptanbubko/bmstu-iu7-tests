@@ -1,3 +1,10 @@
 {
-  "markdown.preview.security.level": "allowInsecureContent"
+  "markdown.preview.security.level": "allowInsecureContent",
+  "python.defaultInterpreterPath": "C:/Users/stepa/AppData/Local/Programs/Python/Python312/python.exe",
+  "python.analysis.extraPaths": ["src"],
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python-envs.defaultEnvManager": "ms-python.python:system"
 }
