@@ -7,15 +7,13 @@ import pytest
 
 from wildlife_business.analytics_service import AnalyticsService
 from wildlife_business.catalog_service import CatalogService
-from wildlife_business.dto import (
-    CreateObservationRequest,
-    PopulationAnalysisRequest,
-    SaveSpeciesRequest,
-)
-from wildlife_business.entities import Observation, PopulationRecord, Species
+from wildlife_business.dto import PopulationAnalysisRequest, SaveSpeciesRequest
 from wildlife_business.exceptions import NotFoundError, ValidationError
 from wildlife_business.observation_service import ObservationService
 from wildlife_data.sqlite_repository import SqliteRepository
+
+from tests.builders import an_observation
+from tests.mothers import ObjectMother
 
 pytestmark = [
     allure.epic("Мониторинг популяции диких животных"),
@@ -29,13 +27,18 @@ pytestmark = [
 @allure.title("Создание наблюдения пишет учёт и запись численности")
 def test_create_observation_notifies_repository_twice() -> None:
     repo = Mock()
-    saved = Observation(10, date(2026, 3, 1), 7, 1, 2, 3, "у реки")
+    saved = ObjectMother.stored_observation_by_river()
     repo.add_observation.return_value = saved
     service = ObservationService(repo)
 
     with allure.step("Создать наблюдение через сервис"):
         result = service.create_observation(
-            CreateObservationRequest(1, 2, 3, date(2026, 3, 1), 7, "у реки")
+            an_observation()
+            .for_refs(1, 2, 3)
+            .on(date(2026, 3, 1))
+            .with_count(7)
+            .with_notes("у реки")
+            .build()
         )
 
     with allure.step("Репозиторий получил наблюдение и обновление численности"):
@@ -60,7 +63,7 @@ def test_invalid_observation_does_not_touch_repository() -> None:
     repo = Mock()
     service = ObservationService(repo)
 
-    request = CreateObservationRequest(1, 2, 3, date(2026, 3, 1), -4)
+    request = an_observation().with_count(-4).build()
     with allure.step("Сервис отклоняет отрицательную численность до записи"):
         with pytest.raises(ValidationError, match="отрицательным"):
             service.create_observation(request)
@@ -74,7 +77,7 @@ def test_invalid_observation_does_not_touch_repository() -> None:
 def test_add_species_checks_catalog_before_save() -> None:
     repo = Mock()
     repo.species_exists.return_value = False
-    repo.save_species.return_value = Species(1, "Felis silvestris", "Лесной кот")
+    repo.save_species.return_value = ObjectMother.stored_forest_cat()
     service = CatalogService(repo)
 
     with allure.step("Добавить вид с лишними пробелами в названии"):
@@ -96,7 +99,7 @@ def test_update_species_stops_when_missing() -> None:
     repo.get_species.return_value = None
     service = CatalogService(repo)
 
-    request = SaveSpeciesRequest("Canis lupus", "Волк")
+    request = ObjectMother.wolf()
     with allure.step("Обновление неизвестного id останавливается на чтении"):
         with pytest.raises(NotFoundError, match="не найден"):
             service.update_species(9, request)
@@ -110,13 +113,7 @@ def test_update_species_stops_when_missing() -> None:
 @allure.title("Анализ передаёт фильтр вида, периода и локации в репозиторий")
 def test_analyze_population_forwards_filter_to_repository() -> None:
     repo = Mock()
-    repo.find_population_records.return_value = [
-        PopulationRecord(date(2026, 4, 1), 12),
-        PopulationRecord(date(2026, 5, 1), 15),
-        PopulationRecord(date(2026, 6, 1), 18),
-        PopulationRecord(date(2026, 7, 1), 20),
-        PopulationRecord(date(2026, 8, 1), 22),
-    ]
+    repo.find_population_records.return_value = ObjectMother.growing_population_records()
     service = AnalyticsService(repo)
 
     with allure.step("Построить анализ по виду, году и локации"):

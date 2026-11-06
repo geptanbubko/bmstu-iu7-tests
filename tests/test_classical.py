@@ -6,15 +6,12 @@ import pytest
 
 from wildlife_business.analytics_service import AnalyticsService
 from wildlife_business.catalog_service import CatalogService
-from wildlife_business.dto import (
-    CreateObservationRequest,
-    PopulationAnalysisRequest,
-    SaveLocationRequest,
-    SaveResearcherRequest,
-    SaveSpeciesRequest,
-)
+from wildlife_business.dto import PopulationAnalysisRequest, SaveSpeciesRequest
 from wildlife_business.exceptions import DuplicateSpeciesError, NoDataError, ValidationError
 from wildlife_business.observation_service import ObservationService
+
+from tests.builders import an_observation
+from tests.mothers import ObjectMother
 
 pytestmark = [
     allure.epic("Мониторинг популяции диких животных"),
@@ -45,8 +42,8 @@ def test_full_catalog_observation_and_trend_flow(catalog, observations, analytic
     with allure.step("Добавить вид, локацию и исследователя"):
         species = catalog.add_species(SaveSpeciesRequest("  Canis lupus  ", "  Волк  "))
         updated = catalog.update_species(species.id, SaveSpeciesRequest("Canis lupus", "Серый волк"))
-        location = catalog.add_location(SaveLocationRequest("Лапландия", "Мурманская область"))
-        researcher = catalog.add_researcher(SaveResearcherRequest("Петров П.П.", "ИУ7"))
+        location = catalog.add_location(ObjectMother.lapland())
+        researcher = catalog.add_researcher(ObjectMother.petrov())
 
     counts = (2, 4, 5, 8, 10)
     days = (
@@ -56,18 +53,10 @@ def test_full_catalog_observation_and_trend_flow(catalog, observations, analytic
         date(2026, 4, 10),
         date(2026, 5, 10),
     )
+    survey = an_observation().for_refs(species.id, location.id, researcher.id).with_notes("учёт")
     with allure.step("Зафиксировать пять наблюдений с растущей численностью"):
         for day, count in zip(days, counts):
-            observations.create_observation(
-                CreateObservationRequest(
-                    species_id=species.id,
-                    location_id=location.id,
-                    researcher_id=researcher.id,
-                    observation_date=day,
-                    individuals_count=count,
-                    notes="учёт",
-                )
-            )
+            observations.create_observation(survey.on(day).with_count(count).build())
 
     with allure.step("Прочитать наблюдения и построить тренд за год"):
         listed = observations.list_observations()
@@ -94,7 +83,7 @@ def test_full_catalog_observation_and_trend_flow(catalog, observations, analytic
 @allure.title("Дубликат научного названия вида отклоняется")
 def test_duplicate_species_is_rejected(catalog) -> None:
     with allure.step("Сохранить вид рыси"):
-        catalog.add_species(SaveSpeciesRequest("Lynx lynx", "Рысь"))
+        catalog.add_species(ObjectMother.lynx())
 
     duplicate = SaveSpeciesRequest("Lynx lynx", "Евразийская рысь")
     with allure.step("Повторное добавление того же научного названия отклоняется"):
@@ -110,12 +99,16 @@ def test_duplicate_species_is_rejected(catalog) -> None:
 @allure.title("Наблюдение в будущем не попадает в хранилище")
 def test_future_observation_does_not_change_store(catalog, observations, analytics) -> None:
     with allure.step("Заполнить справочники"):
-        species = catalog.add_species(SaveSpeciesRequest("Ursus arctos", "Бурый медведь"))
-        location = catalog.add_location(SaveLocationRequest("Заповедник", "Карелия"))
-        researcher = catalog.add_researcher(SaveResearcherRequest("Иванов И.И.", "ИУ7"))
+        species = catalog.add_species(ObjectMother.brown_bear())
+        location = catalog.add_location(ObjectMother.karelia_reserve())
+        researcher = catalog.add_researcher(ObjectMother.ivanov())
 
-    future = CreateObservationRequest(
-        species.id, location.id, researcher.id, date(2099, 1, 1), 1
+    future = (
+        an_observation()
+        .for_refs(species.id, location.id, researcher.id)
+        .on(date(2099, 1, 1))
+        .with_count(1)
+        .build()
     )
     with allure.step("Дата в будущем отклоняется и журнал остаётся пустым"):
         with pytest.raises(ValidationError, match="будущем"):
@@ -133,24 +126,20 @@ def test_future_observation_does_not_change_store(catalog, observations, analyti
 @allure.title("Наблюдение без вида, локации или исследователя не сохраняется")
 def test_observation_without_reference_does_not_change_store(catalog, observations) -> None:
     with allure.step("Заполнить справочники"):
-        species = catalog.add_species(SaveSpeciesRequest("Ursus arctos", "Бурый медведь"))
-        location = catalog.add_location(SaveLocationRequest("Заповедник", "Карелия"))
-        researcher = catalog.add_researcher(SaveResearcherRequest("Иванов И.И.", "ИУ7"))
+        species = catalog.add_species(ObjectMother.brown_bear())
+        location = catalog.add_location(ObjectMother.karelia_reserve())
+        researcher = catalog.add_researcher(ObjectMother.ivanov())
 
-    day = date(2026, 1, 10)
+    valid = (
+        an_observation()
+        .for_refs(species.id, location.id, researcher.id)
+        .on(date(2026, 1, 10))
+        .with_count(3)
+    )
     rejected = (
-        (
-            CreateObservationRequest(0, location.id, researcher.id, day, 3, "без вида"),
-            "вид животного",
-        ),
-        (
-            CreateObservationRequest(species.id, 0, researcher.id, day, 3, "без локации"),
-            "локацию",
-        ),
-        (
-            CreateObservationRequest(species.id, location.id, 0, day, 3, "без исследователя"),
-            "исследователя",
-        ),
+        (valid.with_species(0).with_notes("без вида").build(), "вид животного"),
+        (valid.with_location(0).with_notes("без локации").build(), "локацию"),
+        (valid.with_researcher(0).with_notes("без исследователя").build(), "исследователя"),
     )
 
     with allure.step("Каждая битая ссылка отклоняется"):
@@ -167,7 +156,7 @@ def test_observation_without_reference_does_not_change_store(catalog, observatio
 @allure.title("Анализ периода без учётов завершается ошибкой")
 def test_analysis_without_records_fails(catalog, analytics) -> None:
     with allure.step("Заполнить справочник вида без наблюдений"):
-        species = catalog.add_species(SaveSpeciesRequest("Ursus arctos", "Бурый медведь"))
+        species = catalog.add_species(ObjectMother.brown_bear())
 
     request = PopulationAnalysisRequest(species.id, date(2026, 1, 1), date(2026, 1, 31))
     with allure.step("Анализ января без записей отклоняется"):
