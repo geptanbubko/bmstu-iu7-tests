@@ -23,9 +23,9 @@ env:
 jobs:
   unit:
     name: 1. Unit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Сборка тестового контейнера
         uses: ./.github/actions/tests-image
@@ -37,7 +37,7 @@ jobs:
 
       - name: Сырые результаты Allure
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allure-results-unit
           path: results/unit
@@ -46,9 +46,9 @@ jobs:
   integration:
     name: 2. Integration
     needs: unit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Сборка тестового контейнера
         uses: ./.github/actions/tests-image
@@ -62,7 +62,7 @@ jobs:
 
       - name: Сырые результаты Allure
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allure-results-integration
           path: results/integration
@@ -71,13 +71,13 @@ jobs:
   e2e:
     name: 3. E2E
     needs: integration
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       STAND: wildlife-ci-${{ github.run_id }}-${{ github.run_attempt }}
       RESULTS_DIR: ./results
       CAPTURE_DIR: ./traffic
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Сборка тестового контейнера
         uses: ./.github/actions/tests-image
@@ -113,7 +113,7 @@ jobs:
 
       - name: Сырые результаты Allure
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allure-results-e2e
           path: results/e2e
@@ -121,7 +121,7 @@ jobs:
 
       - name: Захваченный трафик (pcap + лог curl)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: traffic
           path: traffic
@@ -131,14 +131,14 @@ jobs:
     name: Allure-отчёт
     needs: [unit, integration, e2e]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     concurrency:
       group: allure-gh-pages
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -147,21 +147,21 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Результаты unit
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: allure-results-unit
           path: results/unit
 
       - name: Результаты integration
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: allure-results-integration
           path: results/integration
 
       - name: Результаты e2e
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: allure-results-e2e
@@ -181,17 +181,24 @@ jobs:
             fi
           done
 
+      # Ветки gh-pages нет до первой публикации — это не ошибка, просто истории ещё нет.
       - name: История прошлых запусков из gh-pages
-        uses: actions/checkout@v4
-        continue-on-error: true
-        with:
-          ref: gh-pages
-          path: gh-pages
-
-      - name: Подготовить history и executor
         run: |
           mkdir -p results/meta
-          if [ -d gh-pages/history ]; then cp -r gh-pages/history results/meta/history; fi
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null; then
+            git fetch --quiet --depth 1 origin gh-pages
+            if git cat-file -e FETCH_HEAD:history 2>/dev/null; then
+              git archive FETCH_HEAD history | tar -x -C results/meta
+              echo "История: $(ls results/meta/history | wc -l) файлов"
+            else
+              echo "В gh-pages нет каталога history"
+            fi
+          else
+            echo "Ветки gh-pages ещё нет — первый отчёт будет без трендов"
+          fi
+
+      - name: Подготовить executor
+        run: |
           owner="${GITHUB_REPOSITORY%%/*}"; repo="${GITHUB_REPOSITORY#*/}"
           cat > results/meta/executor.json <<EOF
           {
@@ -206,7 +213,7 @@ jobs:
           }
           EOF
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -228,7 +235,7 @@ jobs:
           touch allure-report/.nojekyll
 
       - name: Отчёт как артефакт
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allure-report
           path: allure-report
