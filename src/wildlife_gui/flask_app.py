@@ -14,6 +14,8 @@ from werkzeug.exceptions import HTTPException
 from wildlife_business.analytics_service import AnalyticsService
 from wildlife_business.catalog_service import CatalogService
 from wildlife_business.observation_service import ObservationService
+from wildlife_gui.api import create_api_blueprint
+from wildlife_gui.sessions import SessionRegistry
 from wildlife_gui.controllers import (
     AnalyticsController,
     CatalogController,
@@ -48,7 +50,14 @@ def create_flask_app(
     )
     app.secret_key = secret_key
     app.config["WTF_CSRF_ENABLED"] = True
-    CSRFProtect(app)
+    csrf = CSRFProtect(app)
+
+    # JSON API для E2E/Postman: без cookie-сессий, поэтому CSRF к нему не применяется.
+    sessions = SessionRegistry()
+    app.extensions["wildlife_sessions"] = sessions
+    api = create_api_blueprint(observations, catalog, analytics, sessions)
+    csrf.exempt(api)
+    app.register_blueprint(api)
 
     gui = _Gui(
         role=RoleController(),

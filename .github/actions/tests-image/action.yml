@@ -1,0 +1,27 @@
+name: Сборка тестового контейнера
+description: Собирает docker/tests.Dockerfile — образ сам выкачивает репозиторий на нужном коммите.
+
+inputs:
+  image:
+    description: Тег образа
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: docker/setup-buildx-action@v3
+
+    - uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: docker/tests.Dockerfile
+        tags: ${{ inputs.image }}
+        load: true
+        build-args: |
+          REPO_URL=${{ github.server_url }}/${{ github.repository }}.git
+          GIT_REF=${{ github.sha }}
+        # Токен нужен только для приватного репозитория; в слои образа не попадает.
+        secrets: |
+          git_token=${{ github.token }}
+        cache-from: type=gha,scope=tests-image
+        cache-to: type=gha,mode=max,scope=tests-image

@@ -479,3 +479,97 @@ py -m pytest -m london
 Исходники: [diagrams/lab7/c4/](diagrams/lab7/c4/), [diagrams/lab7/uml/class-gui-layer.puml](diagrams/lab7/uml/class-gui-layer.puml).
 
 Пересборка: `.\diagrams\render-lab7.ps1`
+
+---
+
+# ТИОПО — Лабораторная работа №2: integration, E2E, CI/CD
+
+## 33. Структура тестов и порядок этапов
+
+| Этап | Каталог | Суффикс файлов | Что проверяет |
+| --- | --- | --- | --- |
+| 1. Unit | `tests/unit/` | `test_*.py` | тесты ЛР1 (классическая и лондонская школы) |
+| 2. Integration | `tests/integration/` | `*_it.py` (Integration Test) | `CatalogService`/`ObservationService`/`AnalyticsService` + `SqliteRepository` на отдельном файловом инстансе SQLite |
+| 3. E2E | `tests/e2e/` | `*_e2e.py` | демонстрационный сценарий MVP через HTTP API стенда в Docker (без GUI) |
+
+Один файл — один тест; arrange в начале, затем шаги `act` / `assert` (шаги Allure).
+Каждый тест получает метку этапа (`parentSuite` в Allure, маркер pytest `unit|integration|e2e`).
+
+## 34. Тестовое хранилище
+
+Отдельный инстанс поднимается последовательным запуском скриптов [db/sql](db/sql):
+
+1. `01_schema.sql` — генерация таблиц;
+2. `02_seed.sql` — тестовые данные (явные id, одинаковые при каждом запуске);
+3. `90_rollback.sql` + `02_seed.sql` — откат к состоянию до прогона (одной транзакцией).
+
+Управление — [db/dbctl.py](db/dbctl.py): `init | rollback | verify | fingerprint`.
+`verify` проверяет `PRAGMA integrity_check`, `foreign_key_check` и совпадение отпечатка данных с эталоном,
+построенным теми же скриптами.
+
+* **integration**: на прогон создаётся уникальный файл в tmp; после **каждого** теста (в т.ч. упавшего) —
+  принудительный `rollback` + `verify`. С `WILDLIFE_IT_DB=<путь>` используется постоянный инстанс:
+  перед стартом он обязан быть эталонным.
+* **e2e**: стенд (`docker/app.Dockerfile`) при старте делает `init`/`verify` хранилища в томе `/data`;
+  после E2E (успешного или нет) `ci/stand.sh cleanup` завершает все сессии, откатывает и проверяет хранилище.
+
+Брокера сообщений в проекте нет. Активные сессии есть у HTTP API (`SessionRegistry`): E2E закрывает
+свои сессии и проверяет, что токены больше не действуют; `cleanup` стенда завершает все сессии (`DELETE /api/v1/sessions`).
+
+## 35. Docker и стенд
+
+* [docker/tests.Dockerfile](docker/tests.Dockerfile) — контейнер запуска тестов: **выкачивает репозиторий**
+  (`REPO_URL`, `GIT_REF`), ставит зависимости, точка входа [ci/run-tests.sh](ci/run-tests.sh) `<этап>`.
+* [docker/app.Dockerfile](docker/app.Dockerfile) — тестируемая система (Flask GUI + JSON API `/api/v1`).
+* [docker-compose.test.yml](docker-compose.test.yml) — стенд, контейнер тестов, `tcpdump` и `curl`-имитация.
+* [ci/stand.sh](ci/stand.sh) — `up | e2e | cleanup | replay | down | all`.
+
+Локально (Git Bash + Docker Desktop), полный аналог CI:
+
+```bash
+bash ci/local-pipeline.sh
+```
+
+Без Docker — unit + integration:
+
+```bash
+py -m pytest
+```
+
+**Параллельные разработчики.** Integration-хранилище — свой файл на каждый запуск. Стенд — свой
+compose-проект (`STAND` с именем пользователя, временем и случайным числом): своя сеть, том и
+контейнеры, порт хоста выбирается случайно. E2E-данные помечаются уникальным `run_tag`, поэтому даже
+на общем стенде прогоны не пересекаются.
+
+**Повторный запуск.** `ci/run-tests.sh integration` после основного прогона ещё дважды запускает
+integration-тесты на одном постоянном инстансе и сравнивает результаты (JUnit XML).
+
+## 36. CI/CD (GitHub Actions) и отчёт Allure
+
+Пайплайн [.github/workflows/tests.yml](.github/workflows/tests.yml):
+
+```
+unit ──► integration ──► e2e
+  └──────────┴────────────┴──► report (if: always())
+```
+
+* каждый этап — отдельный job в тестовом контейнере, следующий стартует только после успеха предыдущего (`needs`);
+* `report` выполняется всегда: этапы без результатов прогоняются с `WILDLIFE_STAGE_SKIPPED` и попадают в
+  отчёт как **skipped** (категория «Этап не запускался»);
+* история (`history/`) берётся из ветки `gh-pages` → в отчёте есть **тренды** между запусками;
+* отчёт публикуется в ветку **`gh-pages`**: `index.html` (GitHub Pages) и `allure-report.html` —
+  один самодостаточный файл, который открывается без Allure и без сервера; он же лежит в артефакте `allure-report`.
+
+Однократная настройка репозитория на GitHub: сделать репозиторий публичным,
+**Settings → Pages → Deploy from a branch → `gh-pages` / root**. Отчёт:
+`https://<owner>.github.io/<repo>/`.
+
+## 37. Имитация E2E запросами и захват трафика
+
+* [e2e/curl/replay.sh](e2e/curl/replay.sh) — тот же сценарий через `curl`;
+* [e2e/postman/wildlife-e2e.postman_collection.json](e2e/postman/wildlife-e2e.postman_collection.json) — коллекция Postman (Run collection, `baseUrl` = адрес стенда).
+
+В CI шаг «Имитация E2E через curl + захват трафика» запускает `tcpdump` в сетевом namespace
+контейнера приложения и `curl`-сценарий; `curl-replay.pcap` (открывается в Wireshark, фильтр `http`)
+и `curl-replay.log` — в артефакте `traffic`. Локально: `ci/stand.sh up`, затем `STAND=<имя> bash ci/stand.sh replay`,
+либо Postman + Wireshark на loopback с фильтром `tcp.port == <порт стенда>`.

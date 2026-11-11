@@ -1,66 +1,54 @@
-"""Поднимает тестовое окружение на старте сессии и закрывает его после всех тестов."""
+"""Общая настройка всех этапов: unit → integration → e2e.
+
+* каждый тест получает маркер и Allure-метку своего этапа по каталогу;
+* если этап в CI не запускался (упал предыдущий), он прогоняется с
+  WILDLIFE_STAGE_SKIPPED — все тесты попадают в отчёт как skipped;
+* в сырые результаты Allure кладутся environment.properties и categories.json.
+"""
 from __future__ import annotations
 
+import os
 import platform
 import shutil
-import sqlite3
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
+import allure
 import pytest
 
-from wildlife_data.sqlite_repository import SqliteRepository
-
-# Настоящий connect, сохранённый до подмены: классические тесты открывают :memory:.
-_REAL_SQLITE_CONNECT = sqlite3.connect
-
-
-def _substituted_connection() -> MagicMock:
-    connection = MagicMock(name="substituted_sqlite_connection")
-    cursor = MagicMock(name="substituted_sqlite_cursor")
-    cursor.fetchone.return_value = None
-    cursor.fetchall.return_value = []
-    cursor.lastrowid = 1
-    cursor.rowcount = 0
-    connection.execute.return_value = cursor
-    connection.cursor.return_value = cursor
-    return connection
+STAGES = ("unit", "integration", "e2e")
+STAGE_TITLES = {
+    "unit": "1. Unit",
+    "integration": "2. Integration",
+    "e2e": "3. E2E",
+}
+SKIP_ENV = "WILDLIFE_STAGE_SKIPPED"
+_TESTS_DIR = Path(__file__).resolve().parent
 
 
-@pytest.fixture(scope="session", autouse=True)
-def test_runtime():
-    """Подменяет sqlite3.connect для файловых путей: файл БД не открывается."""
-    connection = _substituted_connection()
-
-    def factory(database, *args, **kwargs):
-        if database == ":memory:":
-            raise AssertionError("In-memory SQLite через подмену connect запрещён")
-        connection._opened_with = database
-        return connection
-
-    with patch("wildlife_data.sqlite_repository.sqlite3.connect", side_effect=factory) as connect:
-        yield {"connect": connect, "connection": connection}
-    connection.close()
-
-
-@pytest.fixture
-def substituted_connection(test_runtime):
-    return test_runtime["connection"]
-
-
-@pytest.fixture
-def connect_spy(test_runtime):
-    return test_runtime["connect"]
-
-
-@pytest.fixture
-def repository():
-    """SQLite :memory: на один тест. Соединение закрывается после него."""
-    repo = SqliteRepository(":memory:", connection_factory=_REAL_SQLITE_CONNECT)
+def stage_of(item: pytest.Item) -> str | None:
     try:
-        yield repo
-    finally:
-        repo.close()
+        relative = Path(str(item.path)).resolve().relative_to(_TESTS_DIR)
+    except ValueError:
+        return None
+    head = relative.parts[0] if relative.parts else ""
+    return head if head in STAGES else None
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    skip_reason = os.environ.get(SKIP_ENV, "").strip()
+    for item in items:
+        stage = stage_of(item)
+        if stage:
+            item.add_marker(getattr(pytest.mark, stage))
+            item.add_marker(allure.parent_suite(STAGE_TITLES[stage]))
+            item.add_marker(allure.tag(stage))
+        if skip_reason:
+            item.add_marker(pytest.mark.skip(reason=skip_reason))
+
+
+def _collected_stages(session: pytest.Session) -> str:
+    stages = sorted({stage_of(item) or "other" for item in session.items})
+    return ", ".join(stages) or "none"
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
@@ -77,13 +65,16 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             f"Python={platform.python_version()}",
             f"OS={platform.system()} {platform.release()}",
             "Framework=pytest",
-            "Database=classical sqlite :memory:, london substituted sqlite3.connect",
-            "Schools=classical, london",
+            "Pipeline=unit -> integration -> e2e",
+            f"Stages={_collected_stages(session)}",
+            "Storage=SQLite (unit: :memory:, integration: отдельный файл из db/*.sql, e2e: стенд в Docker)",
+            f"E2E.URL={os.environ.get('WILDLIFE_E2E_URL', 'not used')}",
+            f"CI={os.environ.get('GITHUB_ACTIONS', 'false')}",
             "",
         )
     )
     (target / "environment.properties").write_text(properties, encoding="utf-8")
 
-    categories = Path(__file__).resolve().parents[1] / "allure" / "categories.json"
+    categories = _TESTS_DIR.parent / "allure" / "categories.json"
     if categories.is_file():
         shutil.copyfile(categories, target / "categories.json")

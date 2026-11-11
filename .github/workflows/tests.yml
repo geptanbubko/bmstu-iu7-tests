@@ -1,0 +1,256 @@
+# Конвейер тестов ЛР2: unit → integration → e2e → Allure-отчёт (GitHub Pages, ветка gh-pages).
+#
+# * каждый этап запускается в контейнере docker/tests.Dockerfile, который сам выкачивает
+#   репозиторий на коммите ${{ github.sha }} и ставит зависимости;
+# * этап стартует, только если предыдущий прошёл (needs);
+# * отчёт собирается всегда (if: always()): незапущенные этапы попадают в него как skipped;
+# * история прогонов берётся из gh-pages → в отчёте есть тренды между запусками.
+name: tests
+
+on:
+  push:
+    branches: [main, master, lab1, lab2]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # публикация отчёта в ветку gh-pages
+
+env:
+  TESTS_IMAGE: wildlife-tests:ci
+  ALLURE_VERSION: "2.46.1"
+
+jobs:
+  unit:
+    name: 1. Unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Сборка тестового контейнера
+        uses: ./.github/actions/tests-image
+        with:
+          image: ${{ env.TESTS_IMAGE }}
+
+      - name: Unit-тесты
+        run: docker run --rm -v "$PWD/results:/results" "$TESTS_IMAGE" unit
+
+      - name: Сырые результаты Allure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-unit
+          path: results/unit
+          if-no-files-found: ignore
+
+  integration:
+    name: 2. Integration
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Сборка тестового контейнера
+        uses: ./.github/actions/tests-image
+        with:
+          image: ${{ env.TESTS_IMAGE }}
+
+      # Внутри: отдельный инстанс SQLite из db/sql/*.sql, откат после каждого теста,
+      # затем два повторных прогона на одном инстансе со сравнением результатов.
+      - name: Integration-тесты (+ проверка повторного запуска)
+        run: docker run --rm -v "$PWD/results:/results" "$TESTS_IMAGE" integration
+
+      - name: Сырые результаты Allure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-integration
+          path: results/integration
+          if-no-files-found: ignore
+
+  e2e:
+    name: 3. E2E
+    needs: integration
+    runs-on: ubuntu-latest
+    env:
+      STAND: wildlife-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      RESULTS_DIR: ./results
+      CAPTURE_DIR: ./traffic
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Сборка тестового контейнера
+        uses: ./.github/actions/tests-image
+        with:
+          image: ${{ env.TESTS_IMAGE }}
+
+      - name: Развернуть стенд (приложение + хранилище в Docker)
+        id: stand
+        run: bash ci/stand.sh up
+
+      - name: E2E-тест
+        run: bash ci/stand.sh e2e
+
+      - name: Откат хранилища и завершение сессий
+        if: always() && steps.stand.outcome == 'success'
+        run: bash ci/stand.sh cleanup
+
+      # ЛР2, п.5: тот же сценарий через curl, трафик пишет tcpdump → артефакт traffic.
+      - name: Имитация E2E через curl + захват трафика
+        if: always() && steps.stand.outcome == 'success'
+        continue-on-error: true
+        run: |
+          bash ci/stand.sh replay
+          bash ci/stand.sh cleanup
+
+      - name: Логи стенда
+        if: failure()
+        run: docker compose -f docker-compose.test.yml -p "$STAND" logs app
+
+      - name: Удалить стенд
+        if: always()
+        run: bash ci/stand.sh down
+
+      - name: Сырые результаты Allure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-e2e
+          path: results/e2e
+          if-no-files-found: ignore
+
+      - name: Захваченный трафик (pcap + лог curl)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: traffic
+          path: traffic
+          if-no-files-found: ignore
+
+  report:
+    name: Allure-отчёт
+    needs: [unit, integration, e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    concurrency:
+      group: allure-gh-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Зависимости (для пометки незапущенных этапов)
+        run: pip install -r requirements.txt
+
+      - name: Результаты unit
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-results-unit
+          path: results/unit
+
+      - name: Результаты integration
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-results-integration
+          path: results/integration
+
+      - name: Результаты e2e
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-results-e2e
+          path: results/e2e
+
+      - name: Незапущенные этапы → skipped
+        env:
+          UNIT: ${{ needs.unit.result }}
+          INTEGRATION: ${{ needs.integration.result }}
+          E2E: ${{ needs.e2e.result }}
+        run: |
+          echo "unit=$UNIT integration=$INTEGRATION e2e=$E2E"
+          for stage in unit integration e2e; do
+            if [ -z "$(ls -A "results/$stage" 2>/dev/null)" ]; then
+              RESULTS_ROOT=results bash ci/run-tests.sh skipped "$stage" \
+                "Этап не запускался: предыдущий этап конвейера завершился с ошибкой"
+            fi
+          done
+
+      - name: История прошлых запусков из gh-pages
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Подготовить history и executor
+        run: |
+          mkdir -p results/meta
+          if [ -d gh-pages/history ]; then cp -r gh-pages/history results/meta/history; fi
+          owner="${GITHUB_REPOSITORY%%/*}"; repo="${GITHUB_REPOSITORY#*/}"
+          cat > results/meta/executor.json <<EOF
+          {
+            "name": "GitHub Actions",
+            "type": "github",
+            "url": "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions",
+            "buildOrder": ${GITHUB_RUN_NUMBER},
+            "buildName": "${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER} (${GITHUB_REF_NAME})",
+            "buildUrl": "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
+            "reportUrl": "https://${owner}.github.io/${repo}/",
+            "reportName": "Wildlife Monitoring — Allure"
+          }
+          EOF
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Allure CLI
+        run: |
+          curl -sSL -o allure.tgz \
+            "https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.tgz"
+          tar -xzf allure.tgz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/allure-${ALLURE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Сгенерировать отчёт
+        run: |
+          dirs="results/unit results/integration results/e2e results/meta"
+          allure generate $dirs --clean -o allure-report
+          # Самодостаточный HTML: открывается двойным щелчком, без allure serve и без сервера.
+          allure generate $dirs --clean --single-file -o allure-single
+          cp allure-single/index.html allure-report/allure-report.html
+          touch allure-report/.nojekyll
+
+      - name: Отчёт как артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report
+
+      - name: Публикация в gh-pages
+        if: github.event_name != 'pull_request'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./allure-report
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          full_commit_message: "Allure: ${{ github.workflow }} #${{ github.run_number }} (${{ github.ref_name }}, ${{ github.sha }})"
+
+      - name: Ссылка на отчёт
+        if: github.event_name != 'pull_request'
+        run: |
+          owner="${GITHUB_REPOSITORY%%/*}"; repo="${GITHUB_REPOSITORY#*/}"
+          {
+            echo "### Allure-отчёт"
+            echo "- GitHub Pages: https://${owner}.github.io/${repo}/"
+            echo "- Один файл без сервера: https://${owner}.github.io/${repo}/allure-report.html"
+            echo "- unit: ${{ needs.unit.result }}, integration: ${{ needs.integration.result }}, e2e: ${{ needs.e2e.result }}"
+          } >> "$GITHUB_STEP_SUMMARY"

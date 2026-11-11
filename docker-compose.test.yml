@@ -1,0 +1,63 @@
+# Тестовое окружение ЛР2. Имя проекта (-p) уникально для каждого запуска, поэтому
+# стенды разных разработчиков и CI-прогонов не пересекаются: свои сеть, том и контейнеры.
+# Управление — через ci/stand.sh (up | e2e | cleanup | replay | down | all).
+name: wildlife-stand
+
+services:
+  # Тестируемая система: приложение + SQLite в томе, поднятом скриптами db/sql.
+  app:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    image: ${STAND_IMAGE:-wildlife-stand:local}
+    volumes:
+      - stand-data:/data
+    ports:
+      - "5000"            # случайный порт хоста: несколько стендов на одной машине не конфликтуют
+
+  # Контейнер тестов (клонирует репозиторий при сборке, см. docker/tests.Dockerfile).
+  tests:
+    build:
+      context: .
+      dockerfile: docker/tests.Dockerfile
+      args:
+        REPO_URL: ${REPO_URL:-}
+        GIT_REF: ${GIT_REF:-}
+    image: ${TESTS_IMAGE:-wildlife-tests:local}
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      WILDLIFE_E2E_URL: http://app:5000
+      WILDLIFE_RUN_TAG: ${WILDLIFE_RUN_TAG:-}
+    volumes:
+      - ${RESULTS_DIR:-./results}:/results
+    command: ["e2e"]
+    profiles: ["tests"]
+
+  # Захват трафика к приложению (tcpdump в сетевом namespace контейнера app).
+  capture:
+    image: nicolaka/netshoot:v0.13
+    network_mode: "service:app"
+    cap_add: [NET_ADMIN, NET_RAW]
+    volumes:
+      - ${CAPTURE_DIR:-./traffic}:/capture
+    command: ["tcpdump", "-Z", "root", "-i", "any", "-U", "-s", "0", "-w", "/capture/curl-replay.pcap", "tcp port 5000"]
+    profiles: ["capture"]
+
+  # Имитация E2E-сценария через curl (средство отправки запросов).
+  replay:
+    image: alpine:3.20
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://app:5000
+    volumes:
+      - ./e2e/curl:/scripts:ro
+      - ${CAPTURE_DIR:-./traffic}:/capture
+    entrypoint: ["sh", "/scripts/replay.sh"]
+    profiles: ["capture"]
+
+volumes:
+  stand-data:
