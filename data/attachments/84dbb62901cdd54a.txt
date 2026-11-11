@@ -1,0 +1,10 @@
+POST http://app:5000/api/v1/species
+{
+  "scientific_name": "Vulpes lagopus e2e-f689d9b3",
+  "common_name": "Песец"
+}
+
+HTTP 409
+{
+  "error": "Такой вид уже зарегистрирован"
+}

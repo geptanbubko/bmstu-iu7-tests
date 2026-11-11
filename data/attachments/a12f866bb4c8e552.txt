@@ -1,0 +1,7 @@
+GET http://app:5000/api/v1/species
+
+
+HTTP 401
+{
+  "error": "Требуется активная сессия"
+}

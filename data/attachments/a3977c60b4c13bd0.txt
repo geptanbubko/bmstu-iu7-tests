@@ -1,0 +1,1 @@
+/tmp/pytest-of-root/pytest-0/wildlife-it0/wildlife-it-16246be7dbb7.db

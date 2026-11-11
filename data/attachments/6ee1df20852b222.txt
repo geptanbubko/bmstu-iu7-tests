@@ -1,0 +1,4 @@
+DELETE http://app:5000/api/v1/session
+
+
+HTTP 204

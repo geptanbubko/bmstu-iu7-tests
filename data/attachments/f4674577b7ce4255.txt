@@ -1,0 +1,13 @@
+POST http://app:5000/api/v1/observations
+{
+  "species_id": 4,
+  "location_id": 3,
+  "researcher_id": 3,
+  "observation_date": "2025-09-10",
+  "individuals_count": 1
+}
+
+HTTP 403
+{
+  "error": "Недостаточно прав для роли"
+}
