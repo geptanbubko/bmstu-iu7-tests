@@ -1,0 +1,12 @@
+POST http://app:5000/api/v1/researchers
+{
+  "full_name": "Тестов Т.Т. e2e-64faa24e",
+  "organization": "ИУ7"
+}
+
+HTTP 201
+{
+  "full_name": "Тестов Т.Т. e2e-64faa24e",
+  "id": 3,
+  "organization": "ИУ7"
+}

@@ -1,0 +1,20 @@
+POST http://app:5000/api/v1/observations
+{
+  "species_id": 4,
+  "location_id": 3,
+  "researcher_id": 3,
+  "observation_date": "2025-07-10",
+  "individuals_count": 8,
+  "notes": "64faa24e"
+}
+
+HTTP 201
+{
+  "id": 11,
+  "individuals_count": 8,
+  "location_id": 3,
+  "notes": "64faa24e",
+  "observation_date": "2025-07-10",
+  "researcher_id": 3,
+  "species_id": 4
+}
