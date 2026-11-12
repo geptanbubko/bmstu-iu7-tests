@@ -1,0 +1,12 @@
+POST http://app:5000/api/v1/locations
+{
+  "name": "Хибины e2e-7c3f4b22",
+  "region": "Мурманская область"
+}
+
+HTTP 201
+{
+  "id": 3,
+  "name": "Хибины e2e-7c3f4b22",
+  "region": "Мурманская область"
+}

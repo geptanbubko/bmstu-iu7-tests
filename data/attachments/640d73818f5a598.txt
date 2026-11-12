@@ -1,0 +1,10 @@
+POST http://app:5000/api/v1/session
+{
+  "role": "researcher"
+}
+
+HTTP 201
+{
+  "role": "researcher",
+  "token": "9o62zwc83Ot2lTS07P0GIeS3uFeRQIde"
+}

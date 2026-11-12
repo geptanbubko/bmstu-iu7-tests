@@ -1,0 +1,10 @@
+POST http://app:5000/api/v1/session
+{
+  "role": "admin"
+}
+
+HTTP 201
+{
+  "role": "admin",
+  "token": "WBM6xq8G0GAQ2thMm_2QXrPLPuBcVLdt"
+}
