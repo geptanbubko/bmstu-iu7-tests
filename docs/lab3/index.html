@@ -1,0 +1,60 @@
+<!doctype html><html lang='ru'><head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>ЛР3 — SQL vs ORM</title><style>
+:root { --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+        --line:rgba(11,11,11,.10); }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--page); color:var(--ink);
+       font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { max-width:1180px; margin:0 auto; padding:32px 16px 64px; }
+h1 { font-size:28px; margin:0 0 4px; } h2 { font-size:20px; margin:40px 0 8px; }
+p.lead { color:var(--ink2); margin:0 0 24px; max-width:820px; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+.tile { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+.tile .label { color:var(--ink2); font-size:13px; } .tile .value { font-size:24px; font-weight:600; }
+figure { margin:16px 0; background:var(--surface); border:1px solid var(--line); border-radius:10px;
+         padding:12px; } figure img { width:100%; height:auto; display:block; }
+nav a { color:var(--ink2); margin-right:16px; } .env { color:var(--muted); font-size:13px; }
+</style></head><body><main>
+<h1>Микробенчмарк: SQL (sqlite3) против ORM (SQLAlchemy)</h1>
+<p class='lead'>Слой данных Wildlife Monitoring: одни и те же операции, одна и та же БД, одинаковый план операций. Каждый прогон — отдельный контейнер из одного образа, 1 ядро CPU.</p>
+<div class='tiles'>
+<div class='tile'><div class='label'>Прогонов (контейнеров)</div><div class='value'>40</div></div>
+<div class='tile'><div class='label'>Измерений в статистике</div><div class='value'>800 000</div></div>
+<div class='tile'><div class='label'>Замеров на прогон</div><div class='value'>20 000</div></div>
+<div class='tile'><div class='label'>Overhead замера, p50</div><div class='value'>81 нс</div></div>
+<div class='tile'><div class='label'>CPU на прогон</div><div class='value'>1</div></div>
+</div>
+<p class='env'>Python 3.14.4 · SQLite 3.46.1 · SQLAlchemy 2.0.44 · Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.43</p>
+<nav><a href='#read_by_id'>чтение по PK</a><a href='#read_range'>чтение диапазона</a><a href='#write_insert'>запись</a><a href='#mixed'>чтение + запись</a></nav>
+<h2>Сводка</h2>
+<figure><img src='overview_latency.png' alt='overview_latency.png'></figure>
+<figure><img src='overview_ratio.png' alt='overview_ratio.png'></figure>
+<figure><img src='overview_overhead.png' alt='overview_overhead.png'></figure>
+<figure><img src='overview_stability.png' alt='overview_stability.png'></figure>
+<h2 id='read_by_id'>Чтение вида по первичному ключу (get_species)</h2>
+<figure><img src='read_by_id_pbars.png' alt='read_by_id_pbars.png'></figure>
+<figure><img src='read_by_id_percentiles.png' alt='read_by_id_percentiles.png'></figure>
+<figure><img src='read_by_id_histogram.png' alt='read_by_id_histogram.png'></figure>
+<figure><img src='read_by_id_timeline.png' alt='read_by_id_timeline.png'></figure>
+<figure><img src='read_by_id_phases.png' alt='read_by_id_phases.png'></figure>
+<h2 id='read_range'>Чтение учётов за 30 дней по индексу (find_population_records)</h2>
+<figure><img src='read_range_pbars.png' alt='read_range_pbars.png'></figure>
+<figure><img src='read_range_percentiles.png' alt='read_range_percentiles.png'></figure>
+<figure><img src='read_range_histogram.png' alt='read_range_histogram.png'></figure>
+<figure><img src='read_range_timeline.png' alt='read_range_timeline.png'></figure>
+<figure><img src='read_range_phases.png' alt='read_range_phases.png'></figure>
+<h2 id='write_insert'>Запись наблюдения (add_observation + commit)</h2>
+<figure><img src='write_insert_pbars.png' alt='write_insert_pbars.png'></figure>
+<figure><img src='write_insert_percentiles.png' alt='write_insert_percentiles.png'></figure>
+<figure><img src='write_insert_histogram.png' alt='write_insert_histogram.png'></figure>
+<figure><img src='write_insert_timeline.png' alt='write_insert_timeline.png'></figure>
+<figure><img src='write_insert_phases.png' alt='write_insert_phases.png'></figure>
+<h2 id='mixed'>Смешанный: 70 % чтений диапазона + 30 % upsert в ту же таблицу</h2>
+<figure><img src='mixed_pbars.png' alt='mixed_pbars.png'></figure>
+<figure><img src='mixed_percentiles.png' alt='mixed_percentiles.png'></figure>
+<figure><img src='mixed_histogram.png' alt='mixed_histogram.png'></figure>
+<figure><img src='mixed_kinds.png' alt='mixed_kinds.png'></figure>
+<figure><img src='mixed_timeline.png' alt='mixed_timeline.png'></figure>
+<figure><img src='mixed_phases.png' alt='mixed_phases.png'></figure>
+</main></body></html>

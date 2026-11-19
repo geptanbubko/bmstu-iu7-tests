@@ -9,7 +9,7 @@ name: tests
 
 on:
   push:
-    branches: [main, master, lab1, lab2]
+    branches: [main, master, lab1, lab2, lab3]
   pull_request:
   workflow_dispatch:
 

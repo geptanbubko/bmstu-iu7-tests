@@ -1,0 +1,60 @@
+# ЛР3: микробенчмарк SQL (sqlite3) vs ORM (SQLAlchemy).
+# Образ собирается один раз; каждый прогон — отдельный контейнер (--cpuset-cpus, --cpus=1).
+# Результат — артефакт bench-report (графики + index.html) и сырые данные bench-raw.
+name: bench
+
+on:
+  push:
+    branches: [lab3]
+    paths: [bench/**, src/wildlife_data/**, src/wildlife_business/**, docker/bench.Dockerfile, ci/bench.sh, .github/workflows/bench.yml]
+  workflow_dispatch:
+    inputs:
+      repeats:
+        description: Повторов (контейнеров) на пару «реализация × сценарий»
+        default: "5"
+      measure:
+        description: Измеряемых операций на прогон
+        default: "20000"
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: SQL vs ORM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      BENCH_REPEATS: ${{ inputs.repeats || '5' }}
+      BENCH_ARGS: --measure ${{ inputs.measure || '20000' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Образ бенчмарка
+        run: bash ci/bench.sh build
+
+      - name: SQL и ORM дают одинаковые результаты
+        run: bash ci/bench.sh verify
+
+      - name: Прогоны (каждый в своём контейнере)
+        run: bash ci/bench.sh run
+
+      - name: Графики
+        run: bash ci/bench.sh report
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bench-report
+          path: results/bench/report
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bench-raw
+          path: results/bench/raw
+
+      - name: Итог
+        run: |
+          {
+            echo "### Микробенчмарк SQL vs ORM"
+            echo "Повторов на пару: $BENCH_REPEATS · $BENCH_ARGS · отчёт: артефакт **bench-report** (index.html)"
+          } >> "$GITHUB_STEP_SUMMARY"
