@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 # Образ микробенчмарка ЛР3. Один образ — одна конфигурация; каждый прогон запускается в НОВОМ
 # контейнере из него (см. ci/bench.sh), поэтому у всех попыток одинаковые стартовые условия.
 #   docker build -f docker/bench.Dockerfile -t wildlife-bench .
