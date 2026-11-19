@@ -2,6 +2,7 @@
 
     python -m bench run --target sql --scenario read_by_id --repeat 0 --out results/bench/raw
     python -m bench report --raw results/bench/raw --out results/bench/report
+    python -m bench grafana --raw results/bench/raw --out results/bench/grafana/01_bench.sql.gz
     python -m bench verify
     python -m bench list
 """
@@ -54,6 +55,14 @@ def _cmd_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_grafana(args: argparse.Namespace) -> int:
+    from bench.grafana_export import export_sql
+
+    path = export_sql(Path(args.raw), Path(args.out))
+    print(f"[bench] данные для Grafana: {path}")
+    return 0
+
+
 def _cmd_verify(args: argparse.Namespace) -> int:
     from bench.verify import verify
 
@@ -92,6 +101,11 @@ def main(argv: list[str] | None = None) -> int:
     report_p.add_argument("--raw", default="results/bench/raw")
     report_p.add_argument("--out", default="results/bench/report")
     report_p.set_defaults(func=_cmd_report)
+
+    grafana_p = sub.add_parser("grafana", help="SQL-дамп результатов для дашборда Grafana")
+    grafana_p.add_argument("--raw", default="results/bench/raw")
+    grafana_p.add_argument("--out", default="results/bench/grafana/01_bench.sql.gz")
+    grafana_p.set_defaults(func=_cmd_grafana)
 
     verify_p = sub.add_parser("verify", help="SQL и ORM дают одинаковые результаты на одном плане")
     verify_p.add_argument("--ops", type=int, default=300)

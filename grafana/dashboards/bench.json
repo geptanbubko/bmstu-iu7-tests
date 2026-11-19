@@ -1,0 +1,2539 @@
+{
+  "uid": "wildlife-bench",
+  "title": "ЛР3 — SQL vs ORM (микробенчмарк)",
+  "tags": [
+    "lab3",
+    "benchmark"
+  ],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 0,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {
+    "hidden": true
+  },
+  "refresh": "",
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "name": "scenario",
+        "label": "Сценарий",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "bench-pg"
+        },
+        "query": "SELECT short AS __text, scenario AS __value FROM scenarios ORDER BY ord",
+        "definition": "SELECT short AS __text, scenario AS __value FROM scenarios ORDER BY ord",
+        "refresh": 1,
+        "current": {},
+        "multi": false,
+        "includeAll": false,
+        "sort": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Прогонов (контейнеров)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT count(*) AS v FROM runs",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {
+          "valueSize": 34
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#0b0b0b"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Измерений в статистике",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 5,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT sum(ops) * (SELECT count(*) FROM runs) / count(*) AS v FROM phases WHERE phase = 'measure'",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {
+          "valueSize": 34
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#0b0b0b"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Overhead замера, p50",
+      "description": "Тот же цикл замера с пустой функцией вместо операции",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 10,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY noop_ns) AS v FROM overhead",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {
+          "valueSize": 34
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ns",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#0b0b0b"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "CPU на прогон",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT max(array_length(string_to_array(trim(both '[]' from cpu), ','), 1)) AS v FROM runs",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {
+          "valueSize": 34
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#0b0b0b"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Окружение",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 19,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT 'Python ' || max(python) || ' · SQLite ' || max(sqlite) AS v FROM runs",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {
+          "valueSize": 16
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#0b0b0b"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Сводка по всем сценариям",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Медиана p50 по сценариям",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT s.short AS \"сценарий\", max(m.latency_us) FILTER (WHERE m.target = 'sql') AS \"SQL · sqlite3\", max(m.latency_us) FILTER (WHERE m.target = 'orm') AS \"ORM · SQLAlchemy\" FROM summary m JOIN scenarios s USING (scenario) WHERE m.p = 0.5 GROUP BY s.short, s.ord ORDER BY s.ord",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "none",
+        "groupWidth": 0.62,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 11
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "log",
+              "log": 10
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Хвост p99 по сценариям",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT s.short AS \"сценарий\", max(m.latency_us) FILTER (WHERE m.target = 'sql') AS \"SQL · sqlite3\", max(m.latency_us) FILTER (WHERE m.target = 'orm') AS \"ORM · SQLAlchemy\" FROM summary m JOIN scenarios s USING (scenario) WHERE m.p = 0.99 GROUP BY s.short, s.ord ORDER BY s.ord",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "none",
+        "groupWidth": 0.62,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 11
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "log",
+              "log": 10
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": "barchart",
+      "title": "Во сколько раз ORM медленнее чистого SQL",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT s.short AS \"сценарий\", max(latency_us) FILTER (WHERE target = 'orm' AND p = 0.5) / max(latency_us) FILTER (WHERE target = 'sql' AND p = 0.5) AS \"по медиане p50\", max(latency_us) FILTER (WHERE target = 'orm' AND p = 0.99) / max(latency_us) FILTER (WHERE target = 'sql' AND p = 0.99) AS \"по хвосту p99\" FROM summary JOIN scenarios s USING (scenario) GROUP BY s.short, s.ord ORDER BY s.ord",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "none",
+        "groupWidth": 0.62,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 11
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "prefix:×",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "decimals": 1,
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "по медиане p50"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1baf7a"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "по хвосту p99"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6250d6"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "barchart",
+      "title": "Доля overhead инструмента в медиане операции",
+      "description": "overhead (пустая операция в цикле замера) / p50 операции, медиана по прогонам",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT s.short AS \"сценарий\", max(m.share_pct) FILTER (WHERE m.target = 'sql') AS \"SQL · sqlite3\", max(m.share_pct) FILTER (WHERE m.target = 'orm') AS \"ORM · SQLAlchemy\" FROM (SELECT scenario, target, percentile_cont(0.5) WITHIN GROUP (ORDER BY share_pct) AS share_pct FROM overhead GROUP BY scenario, target) m JOIN scenarios s USING (scenario) WHERE true GROUP BY s.short, s.ord ORDER BY s.ord",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "none",
+        "groupWidth": 0.62,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 11
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "decimals": 2,
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Сценарий: $scenario",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 12,
+      "type": "barchart",
+      "title": "Требуемые перцентили 0.5 / 0.75 / 0.9 / 0.95 / 0.99",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT m.label AS \"перцентиль\", max(m.latency_us) FILTER (WHERE m.target = 'sql') AS \"SQL · sqlite3\", max(m.latency_us) FILTER (WHERE m.target = 'orm') AS \"ORM · SQLAlchemy\" FROM summary m WHERE m.scenario = '$scenario' AND m.p <= 0.99 GROUP BY m.label, m.p ORDER BY m.p",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "none",
+        "groupWidth": 0.62,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 11
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "log",
+              "log": 10
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "type": "xychart",
+      "title": "Распределение по перцентилям (логарифмическая шкала, одна линия на реализацию)",
+      "description": "x = −log10(1 − p); точки — требуемые перцентили. Все прогоны пары вместе.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 12,
+        "y": 23,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT nines AS x, latency_us AS \"SQL · sqlite3\" FROM curve WHERE scenario = '$scenario' AND target = 'sql' ORDER BY nines",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "B",
+          "rawSql": "SELECT nines AS x, latency_us AS \"ORM · SQLAlchemy\" FROM curve WHERE scenario = '$scenario' AND target = 'orm' ORDER BY nines",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "C",
+          "rawSql": "SELECT -log(1 - p) AS x, latency_us AS \"SQL · p50…p99\" FROM summary WHERE scenario = '$scenario' AND target = 'sql' AND p <= 0.99 ORDER BY p",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "D",
+          "rawSql": "SELECT -log(1 - p) AS x, latency_us AS \"ORM · p50…p99\" FROM summary WHERE scenario = '$scenario' AND target = 'orm' AND p <= 0.99 ORDER BY p",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "mapping": "manual",
+        "series": [
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 0
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "SQL · sqlite3"
+              }
+            },
+            "name": {
+              "fixed": "SQL · sqlite3"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 1
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "ORM · SQLAlchemy"
+              }
+            },
+            "name": {
+              "fixed": "ORM · SQLAlchemy"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 2
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "SQL · p50…p99"
+              }
+            },
+            "name": {
+              "fixed": "SQL · p50…p99"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 3
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "ORM · p50…p99"
+              }
+            },
+            "name": {
+              "fixed": "ORM · p50…p99"
+            }
+          }
+        ],
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "custom": {
+            "show": "points",
+            "pointSize": {
+              "fixed": 5
+            },
+            "pointShape": "circle",
+            "pointStrokeWidth": 1,
+            "fillOpacity": 60,
+            "lineWidth": 2,
+            "axisPlacement": "auto",
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "log",
+              "log": 10
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "lines"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "lines"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · p50…p99"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 8
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · p50…p99"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 8
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "x"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "перцентиль, «девятки»: 0.3 = 50 %, 1 = 90 %, 2 = 99 %, 3 = 99.9 %, 4 = 99.99 %"
+              },
+              {
+                "id": "custom.scaleDistribution",
+                "value": {
+                  "type": "linear"
+                }
+              },
+              {
+                "id": "min",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "type": "xychart",
+      "title": "Гистограмма распределения (логарифмические корзины)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT bin_us AS x, share_pct AS \"SQL · sqlite3\" FROM histogram WHERE scenario = '$scenario' AND target = 'sql' ORDER BY bin_us",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "B",
+          "rawSql": "SELECT bin_us AS x, share_pct AS \"ORM · SQLAlchemy\" FROM histogram WHERE scenario = '$scenario' AND target = 'orm' ORDER BY bin_us",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "mapping": "manual",
+        "series": [
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 0
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "SQL · sqlite3"
+              }
+            },
+            "name": {
+              "fixed": "SQL · sqlite3"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 1
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "ORM · SQLAlchemy"
+              }
+            },
+            "name": {
+              "fixed": "ORM · SQLAlchemy"
+            }
+          }
+        ],
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "custom": {
+            "show": "points",
+            "pointSize": {
+              "fixed": 5
+            },
+            "pointShape": "circle",
+            "pointStrokeWidth": 1,
+            "fillOpacity": 60,
+            "lineWidth": 2,
+            "axisPlacement": "auto",
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "lines"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "lines"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "x"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "µs"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "задержка"
+              },
+              {
+                "id": "custom.scaleDistribution",
+                "value": {
+                  "type": "log",
+                  "log": 10
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "type": "barchart",
+      "title": "Перцентили по видам операций (чтение / запись)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT CASE kind WHEN 'read' THEN 'чтение ' ELSE 'запись ' END || label AS \"операция\", max(latency_us) FILTER (WHERE target = 'sql') AS \"SQL · sqlite3\", max(latency_us) FILTER (WHERE target = 'orm') AS \"ORM · SQLAlchemy\" FROM kinds WHERE scenario = '$scenario' GROUP BY kind, label, p ORDER BY kind, p",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "none",
+        "groupWidth": 0.62,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": -35,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 9
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "log",
+              "log": 10
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "type": "xychart",
+      "title": "Задержка во времени — SQL · sqlite3 (прогон r00, все фазы)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 0,
+        "y": 41,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT t_s AS x, latency_us AS \"warmup\" FROM timeline WHERE scenario = '$scenario' AND target = 'sql' AND phase = 'warmup' ORDER BY t_s",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "B",
+          "rawSql": "SELECT t_s AS x, latency_us AS \"measure · SQL · sqlite3\" FROM timeline WHERE scenario = '$scenario' AND target = 'sql' AND phase = 'measure' ORDER BY t_s",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "C",
+          "rawSql": "SELECT t_s AS x, latency_us AS \"teardown\" FROM timeline WHERE scenario = '$scenario' AND target = 'sql' AND phase = 'teardown' ORDER BY t_s",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "D",
+          "rawSql": "SELECT t_s AS x, latency_us AS \"скользящая медиана\" FROM timeline_median WHERE scenario = '$scenario' AND target = 'sql' ORDER BY t_s",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "mapping": "manual",
+        "series": [
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 0
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "warmup"
+              }
+            },
+            "name": {
+              "fixed": "warmup"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 1
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "measure · SQL · sqlite3"
+              }
+            },
+            "name": {
+              "fixed": "measure · SQL · sqlite3"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 2
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "teardown"
+              }
+            },
+            "name": {
+              "fixed": "teardown"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 3
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "скользящая медиана"
+              }
+            },
+            "name": {
+              "fixed": "скользящая медиана"
+            }
+          }
+        ],
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "custom": {
+            "show": "points",
+            "pointSize": {
+              "fixed": 5
+            },
+            "pointShape": "circle",
+            "pointStrokeWidth": 1,
+            "fillOpacity": 60,
+            "lineWidth": 2,
+            "axisPlacement": "auto",
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "log",
+              "log": 10
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "warmup"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eda100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "measure · SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "teardown"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6250d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "скользящая медиана"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "lines"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#52514e"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "x"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "время от начала прогрева"
+              },
+              {
+                "id": "custom.scaleDistribution",
+                "value": {
+                  "type": "linear"
+                }
+              },
+              {
+                "id": "min",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "type": "xychart",
+      "title": "Задержка во времени — ORM · SQLAlchemy (прогон r00, все фазы)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 12,
+        "y": 41,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT t_s AS x, latency_us AS \"warmup\" FROM timeline WHERE scenario = '$scenario' AND target = 'orm' AND phase = 'warmup' ORDER BY t_s",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "B",
+          "rawSql": "SELECT t_s AS x, latency_us AS \"measure · ORM · SQLAlchemy\" FROM timeline WHERE scenario = '$scenario' AND target = 'orm' AND phase = 'measure' ORDER BY t_s",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "C",
+          "rawSql": "SELECT t_s AS x, latency_us AS \"teardown\" FROM timeline WHERE scenario = '$scenario' AND target = 'orm' AND phase = 'teardown' ORDER BY t_s",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "D",
+          "rawSql": "SELECT t_s AS x, latency_us AS \"скользящая медиана\" FROM timeline_median WHERE scenario = '$scenario' AND target = 'orm' ORDER BY t_s",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "mapping": "manual",
+        "series": [
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 0
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "warmup"
+              }
+            },
+            "name": {
+              "fixed": "warmup"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 1
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "measure · ORM · SQLAlchemy"
+              }
+            },
+            "name": {
+              "fixed": "measure · ORM · SQLAlchemy"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 2
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "teardown"
+              }
+            },
+            "name": {
+              "fixed": "teardown"
+            }
+          },
+          {
+            "frame": {
+              "matcher": {
+                "id": "byIndex",
+                "options": 3
+              }
+            },
+            "x": {
+              "matcher": {
+                "id": "byName",
+                "options": "x"
+              }
+            },
+            "y": {
+              "matcher": {
+                "id": "byName",
+                "options": "скользящая медиана"
+              }
+            },
+            "name": {
+              "fixed": "скользящая медиана"
+            }
+          }
+        ],
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "µs",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "custom": {
+            "show": "points",
+            "pointSize": {
+              "fixed": 5
+            },
+            "pointShape": "circle",
+            "pointStrokeWidth": 1,
+            "fillOpacity": 60,
+            "lineWidth": 2,
+            "axisPlacement": "auto",
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "log",
+              "log": 10
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "warmup"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eda100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "measure · ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "teardown"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "points"
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6250d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "скользящая медиана"
+            },
+            "properties": [
+              {
+                "id": "custom.show",
+                "value": "lines"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.pointSize.fixed",
+                "value": 1
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#52514e"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "x"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "время от начала прогрева"
+              },
+              {
+                "id": "custom.scaleDistribution",
+                "value": {
+                  "type": "linear"
+                }
+              },
+              {
+                "id": "min",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 18,
+      "type": "barchart",
+      "title": "Количество операций по фазам (среднее на прогон)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 0,
+        "y": 50,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT t.label AS \"реализация\", max(ops) FILTER (WHERE phase = 'warmup') AS \"warmup (прогрев)\", max(ops) FILTER (WHERE phase = 'measure') AS \"measure (замер)\", max(ops) FILTER (WHERE phase = 'teardown') AS \"teardown (хвост)\" FROM phases p JOIN targets t USING (target) WHERE p.scenario = '$scenario' GROUP BY t.label, t.ord ORDER BY t.ord",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "normal",
+        "groupWidth": 0.5,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 11
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "decimals": 0,
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "warmup (прогрев)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eda100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "measure (замер)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1baf7a"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "teardown (хвост)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6250d6"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 19,
+      "type": "barchart",
+      "title": "Время выполнения теста по фазам (среднее на прогон)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 12,
+        "y": 50,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "SELECT t.label AS \"реализация\", max(duration_s) FILTER (WHERE phase = 'other') AS \"setup + калибровка + cleanup\", max(duration_s) FILTER (WHERE phase = 'warmup') AS \"warmup (прогрев)\", max(duration_s) FILTER (WHERE phase = 'measure') AS \"measure (замер)\", max(duration_s) FILTER (WHERE phase = 'teardown') AS \"teardown (хвост)\" FROM phases p JOIN targets t USING (target) WHERE p.scenario = '$scenario' GROUP BY t.label, t.ord ORDER BY t.ord",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "normal",
+        "groupWidth": 0.5,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 11
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "decimals": 2,
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "setup + калибровка + cleanup"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#c3c2b7"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "warmup (прогрев)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eda100"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "measure (замер)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1baf7a"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "teardown (хвост)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6250d6"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "type": "barchart",
+      "title": "Стабильность: отклонение p50 каждого прогона от медианы прогонов",
+      "description": "Каждый прогон — отдельный контейнер; разброс показывает воспроизводимость условий",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "bench-pg"
+      },
+      "pluginVersion": "11.4.0",
+      "gridPos": {
+        "x": 0,
+        "y": 57,
+        "w": 24,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "bench-pg"
+          },
+          "refId": "A",
+          "rawSql": "WITH med AS (SELECT target, percentile_cont(0.5) WITHIN GROUP (ORDER BY p50_us) AS m FROM runs WHERE scenario = '$scenario' GROUP BY target) SELECT 'r' || lpad(repeat::text, 2, '0') AS \"прогон\", max((p50_us / m - 1) * 100) FILTER (WHERE target = 'sql') AS \"SQL · sqlite3\", max((p50_us / m - 1) * 100) FILTER (WHERE target = 'orm') AS \"ORM · SQLAlchemy\" FROM runs JOIN med USING (target) WHERE scenario = '$scenario' GROUP BY repeat ORDER BY repeat",
+          "format": "table",
+          "editorMode": "code",
+          "rawQuery": true
+        }
+      ],
+      "options": {
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "none",
+        "groupWidth": 0.62,
+        "barWidth": 0.9,
+        "barRadius": 0.06,
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0,
+        "text": {
+          "valueSize": 11
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisPlacement": "auto",
+            "axisGridShow": true,
+            "axisBorderShow": false,
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2a78d6"
+          },
+          "decimals": 1
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SQL · sqlite3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2a78d6"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ORM · SQLAlchemy"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#eb6834"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

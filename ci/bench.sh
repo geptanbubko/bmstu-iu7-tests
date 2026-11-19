@@ -4,6 +4,8 @@
 #
 #   bash ci/bench.sh            # build + verify + run + report
 #   bash ci/bench.sh build | verify | run | report
+#   bash ci/bench.sh grafana    # результаты → Postgres + Grafana на http://localhost:3000
+#   bash ci/bench.sh grafana-down
 #
 # Настройки (переменные окружения):
 #   BENCH_REPEATS=5                     повторов на пару «реализация × сценарий»
@@ -76,11 +78,27 @@ report() {
         "$image" report --raw /out/raw --out /out/report
 }
 
+grafana() {
+    # дамп результатов для Postgres (тем же образом, теми же расчётами, что и отчёт)
+    docker run --rm "${user_args[@]}" --network=none -v "$host_out:/out" \
+        "$image" grafana --raw /out/raw --out /out/grafana/01_bench.sql.gz
+    # --force-recreate: база в tmpfs, при пересоздании заливается заново из свежего дампа;
+    # путь абсолютный — относительный без ./ compose принял бы за имя тома
+    BENCH_GRAFANA_DATA="$host_out/grafana" docker compose -f docker-compose.bench.yml up -d --force-recreate --wait
+    echo "[bench] Grafana: http://localhost:${BENCH_GRAFANA_PORT:-3000}/d/wildlife-bench"
+}
+
+grafana_down() {
+    docker compose -f docker-compose.bench.yml down
+}
+
 case "$stage" in
     build) build ;;
     verify) verify ;;
     run) run_all ;;
     report) report ;;
     all) build; verify; run_all; report ;;
-    *) echo "usage: $0 [all|build|verify|run|report]" >&2; exit 2 ;;
+    grafana) grafana ;;
+    grafana-down) grafana_down ;;
+    *) echo "usage: $0 [all|build|verify|run|report|grafana|grafana-down]" >&2; exit 2 ;;
 esac
